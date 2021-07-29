@@ -1,0 +1,106 @@
+// Step 3: Models Naming
+
+global proc string FindSnapsSurffix(string $geoName)
+{
+	string $outString = "";
+	
+	string $tokens[];
+	clear $tokens;
+	
+	tokenize $geoName "_" $tokens;
+	
+	for ($i=0;$i<size($tokens);$i++)
+	{
+		string $lowerToken = `tolower ($tokens[$i])`;
+		
+		if (`gmatch $lowerToken "snaps???"` || `gmatch $lowerToken "snaps??"`)
+		{
+			$outString = $tokens[$i];
+			break;
+		}
+	}
+	
+	return $outString;
+	
+}
+
+
+global proc string RemoveSnapsSurffix(string $geoName)
+{
+	string $outString = "";
+	
+	string $tokens[];
+	clear $tokens;
+	
+	tokenize $geoName "_" $tokens;
+	
+	for ($i=0;$i<size($tokens);$i++)
+	{
+		string $lowerToken = `tolower ($tokens[$i])`;
+		
+		if (`gmatch $lowerToken "snaps???"` || `gmatch $lowerToken "snaps??"`)
+		{
+			continue;
+		}
+		else
+		{
+			$outString = $outString + $tokens[$i] + "_";
+		}
+	}
+	
+	// Check the last text
+	if (endString($outString, 1) == "_")
+	{
+		$outString = `substring $outString 1 (size($outString)-1)`;
+	}
+	
+	return $outString;
+	
+}
+
+
+
+
+
+global proc CleanUpSnapsSurffix()
+{
+	int $renameCount = 0;
+	
+	select -cl;
+	select -r `listTransforms -geometry`;
+	
+	string $sels[] = `ls -sl -fl`;
+	
+	for ($i=0;$i<size($sels);$i++)
+	{
+		string $targetGeo = $sels[$i];
+		string $foundSurffix = FindSnapsSurffix($targetGeo);
+		
+		string $renamedOne = $sels[$i];
+		
+		while ($foundSurffix != "")
+		{
+			// Remove SnapsSurffix
+			//print ($targetGeo + " : " + $foundSurffix + "\n");
+			$renamedOne = RemoveSnapsSurffix($renamedOne);
+			$foundSurffix = FindSnapsSurffix($renamedOne);
+			
+		}
+		
+		print ("@@@@" + $targetGeo + " ----> " + $renamedOne + "\n\n");
+		
+		if ($targetGeo != $renamedOne)
+		{
+			rename $targetGeo $renamedOne;
+			$renameCount++;
+		}
+		
+	}
+	
+	headsUpMessage -time 5.0 ("Renamed Geometries : " + $renameCount);
+	
+}
+
+//CleanUpSnapsSurffix();
+
+

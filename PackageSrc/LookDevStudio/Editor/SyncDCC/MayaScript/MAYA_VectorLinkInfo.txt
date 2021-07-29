@@ -1,0 +1,2 @@
+_UvOffset,uv_offset
+_UvTiling,uv_scale

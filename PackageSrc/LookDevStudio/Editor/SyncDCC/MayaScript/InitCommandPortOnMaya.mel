@@ -1,0 +1,17 @@
+
+global proc RefreshCommandPort()
+{
+	string $commandPortName = ":6000";
+	if (!`commandPort -q $commandPortName`)
+	{
+		commandPort -bufferSize 4096 -n $commandPortName;
+	}
+}
+
+global proc InitCommandPort()
+{
+	scriptJob -e "idle" "RefreshCommandPort()";
+}
+
+//InitCommandPort();
+RefreshCommandPort();

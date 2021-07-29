@@ -1,0 +1,20 @@
+// Step 2: Import Model In DCC (Maya)
+
+global proc ImportTargetFBX(string $targetFile)
+{
+	loadPlugin fbxmaya;
+
+	int $result;
+	
+	$result = catch(`file -f -new`);
+	
+	if (`file -q -ex $targetFile`)
+	{
+		//$result = catch(`file -f -import -type "FBX" -ignoreVersion -ra true -mergeNamespacesOnClash false -pr -importFrameRate true -importTimeRange "override" $targetFile`);
+		
+		$result = catch(`FBXImport -f $targetFile`);
+
+		headsUpMessage -time 5.0 ("Loaded the FBX : " + $targetFile + "\n");
+		
+	}
+}

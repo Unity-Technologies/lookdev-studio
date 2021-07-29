@@ -1,0 +1,140 @@
+
+global proc CreateTextureNode(string $texName, string $texPath)
+{
+	string $originalTexName = $texName;
+	string $place2dName = $texName + "_place2dTex";
+	
+	int $count = 0;
+	
+	if (`objExists $texName`)
+	{
+		if (`nodeType -api $texName` == "kFileTexture")
+		{
+			return;
+		}
+	}
+	
+	/*
+	while(`objExists $texName`)
+	{
+		$texName = $originalTexName + (string)$count;
+		$place2dName = $texName + "_place2dTex";
+		$count++;
+	}
+	*/
+	
+	print ("\n@@ Create Texture : " + $texName + "\n\n");
+	shadingNode -asTexture -isColorManaged file -n $texName;
+	
+	
+	//shadingNode -asUtility place2dTexture -n $place2dName; 
+	//connectAttr -f ($place2dName +".coverage") ($texName + ".coverage");
+	
+	
+	
+	if (`file -q -ex $texPath`)
+	{
+		setAttr -type "string" ($texName + ".fileTextureName") ($texPath);
+		catchQuiet (AEfileTextureReloadCmd ($texName + ".fileTextureName"));
+	}	
+}
+
+global proc string CreateStingrayPBSMaterialNode(string $matName)
+{
+	$isReplaced = false;
+	
+	string $targets[];
+	clear $targets;
+	
+	string $exMaterials[] = `ls -mat -fl`;
+
+	if (stringArrayContains($matName, $exMaterials))
+	{
+		if (`nodeType $matName` != "StingrayPBS")
+		{
+			hyperShade -objects $matName;
+			
+			$targets = `ls -sl -fl`;
+			select -cl;
+			
+			delete $matName;
+		}
+	}
+	
+	string $targetMatName = `createRenderNodeCB -asShader "surfaceShader" StingrayPBS ""`;
+	rename $targetMatName $matName;
+	
+	//$targetMatName = `shadingNode -name $targetMatName -asShader StingrayPBS`;
+	
+	
+	
+	if (size($targets) > 0)
+	{
+		select -cl;
+		for ($i=0;$i<size($targets);$i++)
+		{
+			if (`objExists $targets[$i]`)
+			{
+				select -add $targets[$i];
+			}
+		}
+		hyperShade -assign $matName;
+		select -cl;
+	}
+	
+
+	select -cl;
+	select -r $matName;
+	
+	refreshAE;
+	hyperShadeRefreshActiveNode;
+	
+	/*
+	setAttr (".use_color_map") 1;
+	setAttr (".use_normal_map") 1;
+	setAttr (".use_metallic_map") 1;
+	setAttr (".use_roughness_map") 1;
+	setAttr (".use_ao_map") 1;	
+	*/
+	
+	select -cl;
+	
+	return $matName;
+}
+
+global proc LinkTextureToMaterial(string $texAttrName, string $matAttrName)
+{
+	if (!`objExists $texAttrName` || !`objExists $matAttrName`)
+	{
+		return;
+	}
+	
+	//connectAttr -f Hammer_Albedo.outColor NEWPBR.TEX_color_map;
+	connectAttr -f $texAttrName $matAttrName;
+}
+
+global string $Mapping[];
+
+
+global proc ResetMaterialMapping()
+{
+	global string $Mapping[];
+	clear $Mapping;
+}
+
+global proc AddMaterialMappingTables(string $mappingPath)
+{
+	global string $Mapping[];
+	$Mapping[size($Mapping)] = $mappingPath;
+}
+
+
+//CreateTextureNode("MyMy", "D:/OrbitalCamTest.jpg");
+//CreateStingrayPBSMaterialNode("MyMyMat");
+//LinkTextureToMaterial("MyMy.outColor","MyMyMat.TEX_color_map");
+
+
+
+//setAttr ("NEWPBR.use_color_map") 1;
+//snapshot
+//refresh -cv -fe "jpg" -fn "d:/capture.jpg";

@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Label text="LookDev Studio - Prototype" display-tooltip-when-elided="true" style="font-size: 20px; -unity-text-align: upper-center; -unity-font-style: bold; white-space: normal;" />
+    <ui:VisualElement name="Banner" style="background-image: url(&apos;project://database/Packages/com.unity.lookdevstudio/Editor/Resources/LookDev-1.jpg?fileID=2800000&amp;guid=34bb5adf9e55aa544bb92e1fc8c8cce5&amp;type=3#LookDev-1&apos;); width: auto; height: 126px; flex-grow: 1; -unity-background-scale-mode: scale-and-crop; flex-shrink: 0; align-items: stretch;" />
+    <ui:Button text="Share your feedback!" display-tooltip-when-elided="true" name="LinkOne" style="flex-grow: 1; max-height: 25%; font-size: 28px; -unity-font-style: bold; -unity-text-outline-color: rgb(255, 255, 255); -unity-text-outline-width: 0; border-left-color: rgb(56, 56, 56); border-right-color: rgb(56, 56, 56); border-top-color: rgb(56, 56, 56); border-bottom-color: rgb(56, 56, 56); white-space: normal; background-color: rgb(88, 88, 88);" />
+    <ui:Button text="Forum thread &amp; FAQ" display-tooltip-when-elided="true" name="LinkTwo" style="flex-grow: 1; min-height: auto; max-height: 25%; font-size: 24px; white-space: normal;" />
+    <ui:Button text="Watch overview video" display-tooltip-when-elided="true" name="LinkThree" style="flex-grow: 1; min-height: auto; max-height: 25%; font-size: 24px; white-space: normal;" />
+</ui:UXML>

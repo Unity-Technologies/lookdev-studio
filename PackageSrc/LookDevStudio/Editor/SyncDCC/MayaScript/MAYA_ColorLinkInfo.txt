@@ -1,0 +1,2 @@
+_Color,base_color
+_EmissionColor,emissive

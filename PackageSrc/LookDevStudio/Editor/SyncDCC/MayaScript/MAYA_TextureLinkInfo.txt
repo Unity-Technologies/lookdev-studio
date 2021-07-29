@@ -1,0 +1,6 @@
+_MainTex,TEX_color_map
+_BumpMap,TEX_normal_map
+_MetallicGlossMap,TEX_metallic_map
+_SpecGlossMap,TEX_roughness_map
+_EmissionMap,TEX_emissive_map
+_OcclusionMap,TEX_ao_map

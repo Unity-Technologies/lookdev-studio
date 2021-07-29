@@ -1,0 +1,190 @@
+lookdevstudio = {
+    startup = true
+    label = "LookDevStudio"
+    version = "0.1.0"
+    
+    pane_types = []
+    
+ 
+    layout = 
+    {
+        center_view = 
+        { 
+            horizontal = true
+            children = 
+            [    
+                {
+                    size = 10
+                    vertical = true
+                    children = 
+                    [
+                        {
+                            size = 25
+                            class_name = "SceneHierarchyWindow"
+                        }
+                        {
+                            size = 75
+                            class_name = "InspectorWindow"
+                        }
+                    ]
+                }       
+                {
+                    size = 70
+					vertical = true
+                    children = 
+                    [
+						{
+							size = 80
+		                    tabs = true
+							children = 
+							[
+								{
+									class_name = "SceneView"
+								}
+								{
+									class_name = "GameView"
+								}
+							]
+						}
+//						{
+//							size = 20
+//							class_name = "ConsoleWindow"
+//						}
+                    ]
+                }
+                {
+                    size = 20
+                    vertical = true
+                    children = 
+                    [
+                        {
+                            class_name = "QuickControl"
+                            size = 1
+                        }
+                        {
+                            class_name = "QuickSearch"
+                            size = 74
+                        }
+                        {
+                            class_name = "FeedbackWindow"
+                            size = 25
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    menus = [
+        {
+            name = "File" // Name of the top level menu item
+            children = [ // Children of this menu
+                { name = "Exit" }
+            ]
+        }
+        {
+            name = "LookDev Studio"
+            children = [
+                {
+                    name = "Return to Unity"
+                    command_id = "Commands/Return to Unity"
+                }
+            ]
+        }
+        {
+            name = "Edit"
+            children = [
+                { name = "Undo" }
+                { name = "Redo" }
+                { name = "Frame Selected" }
+            ]
+        }
+        {
+            name = "Window"
+            children = [
+                {
+                    name = "General/Game"
+                }
+//                {
+//                    name = "UI Toolkit/Debugger"
+//                }
+                {
+                    name = "Reset View"
+                    command_id = "Commands/ResetLookDevView"
+                }
+                {
+                    name = "Return to Unity"
+                    command_id = "Commands/Return to Unity"
+                }
+            ]
+        }
+    ] 
+
+    capabilities = {
+        // Never save this mode as the current
+        remember = false
+
+        // Update the layout when switching to safe mode.
+        layout_switching = true
+        layout_window_menu = false
+        status_bar_extra_features = false
+        allow_asset_creation = false
+        
+        playbar = false
+        layers = false
+    }
+
+    shortcuts = [
+        /*"Packages/com.unity.unipix/Editor/Mode/Default.shortcut",*/
+    ]
+    
+    build_exclude_patterns = [
+        "\\.pdb$"
+        "\\.dwlt$"
+        "\\.log$"
+        "\\.(hg|git|vs)/"
+        "Temp/"
+        "(il2cpp|obj|Logs)/"
+        "Data/MonoBleedingEdge/bin"
+        "Data/MonoBleedingEdge/lib/(?!.+(4\\.7\\.1\\-api|unity|unityjit)/)"
+        "Data/NetCore"
+        "Data/Resources/GI"
+        "Data/Resources/Licensing"
+        "Data/Resources/Collab"
+        "Data/Resources/OpenCL"
+        "Data/Resources/OpenRL"
+        "Data/Resources/Collab"
+        "Data/Resources/PackageManager/Editor/.+tgz$"
+        "Data/Resources/PackageManager/Diagnostics"
+        "Data/Resources/PackageManager/PackageTemplates"
+        "Data/Resources/PackageManager/ProjectTemplates"
+        "Data/Resources/PackageManager/BuiltInPackages/(?!.+(imgui|jsonserialize)/)"
+        "Data/Tools/BuildPlayerDataGenerator"
+        "Data/Tools/CacheServer"
+        "Data/Tools/FSBTool"
+        "Data/Tools/ILPostProcessorRunner"
+        "Data/Tools/InternalCallRegistrationWriter"
+        "Data/Tools/macosx"
+        "Data/Tools/MapFileParser"
+        "Data/Tools/nodejs"
+        "Data/Tools/netcorerun"
+        "Data/Tools/Roslyn"
+        "Data/Tools/ScriptUpdater"
+        "Data/Tools/VersionControl"
+        "Data/UnityETWProvider"
+        "Data/ScriptCompilationBuildProgram/"
+        "^Calc.dll"
+        "^cudart64_90.dll"
+        "^cudnn64_7.dll"
+        "^libmp3lame.dll"
+        "^MIOpen.dll"
+        "^RadeonML-DirectML.dll"
+        "^RadeonML-MIOpen.dll"
+        "^RadeonRays.dll"
+        "^tbbmalloc.dll"
+        "^RadeonRays.dll"
+        "optix_denoiser.6.0.0.dll"
+        "usymtool.exe"
+        "bee_backend.exe"
+    ]
+}

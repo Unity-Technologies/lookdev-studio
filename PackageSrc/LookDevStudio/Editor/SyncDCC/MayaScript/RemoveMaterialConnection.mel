@@ -1,0 +1,24 @@
+//Step 4: Remove Material Connection (select textures and file textures, and then delete)
+
+
+global proc RemoveAllTextures()
+{
+	
+	int $texCount = 0;
+	
+	select -cl;
+	
+	string $textures[] = `ls -tex -fl`;
+	
+	for ($i=0;$i<size($textures);$i++)
+	{
+		delete $textures[$i];
+		print ("Delete a texture : " + $textures[$i] + "\n");
+		$texCount++;
+	}
+	
+	headsUpMessage -time 5.0 ("Deleted Textures : " + $texCount);
+	
+}
+
+//RemoveAllTextures();

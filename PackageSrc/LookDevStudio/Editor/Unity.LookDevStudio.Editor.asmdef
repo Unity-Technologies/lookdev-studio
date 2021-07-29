@@ -1,0 +1,29 @@
+{
+    "name": "com.unity.lookdevstudio.editor",
+    "rootNamespace": "",
+    "references": [
+        "Unity.[SubGroup].[YourPackageName]",
+        "com.unity.lookdevstudio",
+        "Unity.EditorCoroutines.Editor",
+        "com.unity.cinemachine.editor",
+        "Cinemachine",
+        "Unity.Searcher.Editor",
+        "Unity.RenderPipelines.HighDefinition.Config.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Editor",
+        "Unity.RenderPipelines.HighDefinition.Editor.Tests",
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime.Tests",
+        "Unity.RenderPipelines.HighDefinitionConfig.Editor.Tests"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

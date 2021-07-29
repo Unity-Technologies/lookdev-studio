@@ -1,0 +1,39 @@
+//Step 5: Rename Materials (specific prefix or postfix to be removed)
+
+
+global proc CleanUpSnapsSurffixOnMaterialNames()
+{
+	int $renameCount = 0;
+	
+	select -cl;
+	
+	string $sels[] = `ls -mat -fl`;
+	
+	for ($i=0;$i<size($sels);$i++)
+	{
+		string $targetGeo = $sels[$i];
+		string $foundSurffix = FindSnapsSurffix($targetGeo);
+		
+		string $renamedOne = $sels[$i];
+		
+		while ($foundSurffix != "")
+		{
+			$renamedOne = RemoveSnapsSurffix($renamedOne);
+			$foundSurffix = FindSnapsSurffix($renamedOne);	
+		}
+		
+		print ("@@@@" + $targetGeo + " ----> " + $renamedOne + "\n\n");
+		
+		if ($targetGeo != $renamedOne)
+		{
+			rename $targetGeo $renamedOne;
+			$renameCount++;
+		}
+		
+	}
+	
+	headsUpMessage -time 5.0 ("Renamed Materials : " + $renameCount);
+	
+}
+
+//CleanUpSnapsSurffixOnMaterialNames();

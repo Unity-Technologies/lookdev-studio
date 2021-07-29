@@ -1,0 +1,23 @@
+//Step 6: Export Models
+
+global proc ExportFBXOnCurrentScene(string $outFBX)
+{
+	int $result;
+	
+	if (`file -q -ex $outFBX`)
+	{
+		sysFile -delete $outFBX;
+	}
+	
+	select -cl;
+	
+	$result = `file -force -options "" -type "FBX export" -pr -ea ($outFBX)`;
+	
+	headsUpMessage -time 5.0 ("FBX Exported : " + $outFBX);
+	
+}
+
+
+//string $targetTestFBX = "D:/TestOpenSourceProject/Bag_01/Models/Bag_01.fbx";
+//ExportFBXOnCurrentScene($targetTestFBX);
+

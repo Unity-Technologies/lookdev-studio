@@ -1,0 +1,8 @@
+_UseColorMap,use_color_map
+_UseNormalMap,use_normal_map
+_UseMetallicMap,use_metallic_map
+_Metallic,metallic
+_UseRoughnessMap,use_roughness_map
+_Glossiness,roughness
+_UseEmissiveMap,use_emissive_map
+_UseAoMap,use_ao_map
