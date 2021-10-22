@@ -1,0 +1,24 @@
+{
+    "name": "com.unity.lookdevstudio.editor",
+    "rootNamespace": "",
+    "references": [
+        "com.unity.lookdevstudio",
+        "Unity.EditorCoroutines.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.Formats.Fbx.Editor",
+        "Unity.Searcher.Editor",
+        "Beetlecircus.SerializableDictionary.Editor",
+        "Beetlecircus.SerializableDictionary"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

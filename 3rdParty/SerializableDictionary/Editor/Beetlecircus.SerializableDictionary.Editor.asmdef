@@ -1,0 +1,17 @@
+{
+    "name": "Beetlecircus.SerializableDictionary.Editor",
+    "references": [
+        "Beetlecircus.SerializableDictionary"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

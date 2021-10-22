@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Label text="Welcome to LookDev Studio" display-tooltip-when-elided="true" style="-unity-text-align: middle-center;" />
+    <ui:Label text="Step 1: Install Assets" display-tooltip-when-elided="true" />
+    <ui:Button text="Install HDRP Assets" display-tooltip-when-elided="true" name="InstallHdrpAssetsButton" />
+    <ui:Button text="Install URP Assets" display-tooltip-when-elided="true" name="InstallUrpAssetsButton" />
+    <ui:Label text="Step 2: When finished, setup the Rendering Pipeline" display-tooltip-when-elided="true" />
+    <ui:Button text="Setup" display-tooltip-when-elided="true" name="SetupButton" />
+    <ui:Label text="Step 3: Open LookDev Studio" display-tooltip-when-elided="true" />
+    <ui:Button text="Open LookDev Studio" display-tooltip-when-elided="true" name="OpenLookDevButton" />
+</ui:UXML>

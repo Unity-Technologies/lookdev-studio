@@ -1,0 +1,20 @@
+.toolbarButton {
+    width: 26px;
+    height: 26px;
+}
+
+.cameraButton {
+    width: 20px;
+    height: 20px;
+}
+
+.selectedCameraButton {
+    border-left-color: rgb(255, 118, 0);
+    border-right-color: rgb(255, 118, 0);
+    border-top-color: rgb(255, 118, 0);
+    border-bottom-color: rgb(255, 118, 0);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+}
