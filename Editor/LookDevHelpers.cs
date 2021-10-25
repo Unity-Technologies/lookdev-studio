@@ -440,10 +440,47 @@ namespace LookDev.Editor
                         {
                             Transform assetHolder = GetLookDevContainer().transform;
                             var instantiatedObject = PrefabUtility.InstantiatePrefab(obj);
-                            (instantiatedObject as GameObject).transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-                            (instantiatedObject as GameObject).transform.SetParent(assetHolder);
+
+                            GameObject target = (instantiatedObject as GameObject);
+
+                            target.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                            target.transform.SetParent(assetHolder);
                             Selection.SetActiveObjectWithContext(instantiatedObject, null);
                             SceneView.lastActiveSceneView.FrameSelected();
+
+                            if (ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes && PrefabUtility.GetPrefabAssetType(obj) == PrefabAssetType.Model)
+                            {
+                                string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(target);
+
+                                string savePath = $"{assetPath.Replace(Path.GetExtension(assetPath), string.Empty)}.prefab";
+
+                                if (Path.GetFileName(savePath).ToUpper().StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
+                                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+
+                                if (Path.GetFileName(savePath).ToUpper().EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
+                                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
+
+                                if (string.IsNullOrEmpty(assetPath) == false)
+                                {
+                                    if (AssetDatabase.LoadAssetAtPath<Object>(savePath))
+                                        return;
+
+                                    if (EditorUtility.DisplayDialog("Make Prefab", "Do you want to automatically generate a Prefab from the selected Model latestly?", "Yes", "No"))
+                                    {
+                                            
+
+                                        target.name = Path.GetFileNameWithoutExtension(savePath);
+
+                                        PrefabUtility.SaveAsPrefabAssetAndConnect(target, savePath, InteractionMode.AutomatedAction);
+
+                                        if (SceneView.lastActiveSceneView != null)
+                                            SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Prefab Saved : {savePath}"), 4f);
+
+                                        LookDevSearchHelpers.SwitchCurrentProvider(2);
+                                    }
+                                }
+                                
+                            }
                         }
                         else
                         {

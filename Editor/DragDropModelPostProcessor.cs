@@ -157,8 +157,36 @@ namespace LookDev.Editor
                 RegisterImportedAsset(imported);
 
                 var prop = AssetDatabase.LoadAssetAtPath<Object>(imported);
-                LookDevHelpers.SetHeroAsset(prop);
+                GameObject go = LookDevHelpers.SetHeroAsset(prop);
 
+
+                // Generating Prefab automatically, if "ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes" is On
+                if (prop != null && LookDevHelpers.IsModel(Path.GetExtension(imported)) && ProjectSettingWindow.projectSetting != null)
+                {
+                    if (ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes)
+                    {
+
+                        string savePath = $"{imported.Replace(Path.GetExtension(imported), string.Empty)}.prefab";
+
+                        if (Path.GetFileName(savePath).ToUpper().StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
+                            savePath = savePath.Replace(Path.GetFileName(savePath), $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+
+                        if (Path.GetFileName(savePath).ToUpper().EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
+                            savePath = savePath.Replace(Path.GetFileName(savePath), $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
+
+                        //Debug.Log(savePath);
+
+                        if (savePath != string.Empty)
+                        {
+                            savePath = AssetDatabase.GenerateUniqueAssetPath(savePath);
+                            go.name = Path.GetFileNameWithoutExtension(savePath);
+                            PrefabUtility.SaveAsPrefabAssetAndConnect(go, savePath, InteractionMode.AutomatedAction);
+                            AssetDatabase.SaveAssets();
+
+                            //Debug.Log("SAVE PREFAB!!");
+                        }
+                    }
+                }
             }
 
             LookDevSearchHelpers.RefreshWindow();

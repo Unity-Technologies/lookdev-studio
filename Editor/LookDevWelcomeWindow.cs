@@ -1,10 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UIElements;
+using PackageInfo = UnityEditor.PackageInfo;
 
 namespace LookDev.Editor
 {
@@ -16,8 +19,10 @@ namespace LookDev.Editor
         static readonly string _hdrpPackageAddress = "com.unity.render-pipelines.high-definition";
         static readonly string _urpPackageAddress = "com.unity.render-pipelines.universal";
 
-        const string PathToHDRPAssets =
-            "https://github.com/Unity-Technologies/lookdev-studio/releases/download/r537Assets/LookDevHDRPAssets.unitypackage";
+        const string urlTemplate =
+            "https://github.com/Unity-Technologies/lookdev-studio/releases/download/v{0}/Extension-{1}.unitypackage";
+        
+        const string LDS_PACKAGE_NAME = "com.unity.lookdevstudio";
 
         const string PackageTempDirectory = "Temp";
 
@@ -112,7 +117,9 @@ namespace LookDev.Editor
             openLookDevButton.SetEnabled(LookDevPreferences.instance.IsRenderPipelineInitialized);
         }
 
-        static async Task InstallPackage(string address)
+        static PackageCollection lastQueriedPackageList = null;
+
+        static async Task QueryPackageList()
         {
             var listRequest = Client.List();
             while (!listRequest.IsCompleted)
@@ -120,18 +127,14 @@ namespace LookDev.Editor
                 await Task.Delay(1000);
             }
 
-            bool isPackageInstalled = false;
-            var packageList = listRequest.Result;
-            foreach (var packageInfo in packageList)
-            {
-                if (packageInfo.name == address)
-                {
-                    isPackageInstalled = true;
-                    break;
-                }
-            }
+            lastQueriedPackageList = listRequest.Result;
+        }
+        
+        static async Task InstallPackage(string address)
+        {
+            await QueryPackageList();
 
-            if (!isPackageInstalled)
+            if (lastQueriedPackageList.All(x => x.name != address))
             {
                 var addRequest = Client.Add(address);
                 while (!addRequest.IsCompleted)
@@ -149,20 +152,32 @@ namespace LookDev.Editor
             await InstallPackage(packageAddress);
             //EditorApplication.UnlockReloadAssemblies();
 
-            string sourceFolderPath = EditorUtility.OpenFolderPanel("Select Folder Source", "", "");
-            string selectedFolderName = new DirectoryInfo(sourceFolderPath).Name;
-            if (selectedFolderName != expectedSourceFolderName)
+
+            if (LookDevPreferences.instance.EnableDeveloperMode)
             {
-                Debug.LogError($"Error: Wrong folder selected. Expecting a folder called {expectedSourceFolderName}");
+                string sourceFolderPath = EditorUtility.OpenFolderPanel("Select Folder Source", "", "");
+
+                if (sourceFolderPath == string.Empty)
+                    return;
+                
+                string selectedFolderName = new DirectoryInfo(sourceFolderPath).Name;
+                if (selectedFolderName != expectedSourceFolderName)
+                {
+                    Debug.LogError($"Error: Wrong folder selected. Expecting a folder called {expectedSourceFolderName}");
+                    return;
+                }
+                
+                SymlinkUtility.Symlink(SymlinkUtility.SymlinkType.Junction, sourceFolderPath, "Assets", "LookDev");
+                LookDevPreferences.instance.AreAssetsInstalled = true;
+                window.SetupButton.SetEnabled(LookDevPreferences.instance.AreAssetsInstalled);
                 return;
             }
 
-            SymlinkUtility.Symlink(SymlinkUtility.SymlinkType.Junction, sourceFolderPath, "Assets", "LookDev");
-            LookDevPreferences.instance.AreAssetsInstalled = true;
-            window.SetupButton.SetEnabled(LookDevPreferences.instance.AreAssetsInstalled);
-
-            /*
-            using (var uwr = new UnityWebRequest($"{PathToHDRPAssets}", UnityWebRequest.kHttpVerbGET))
+            var lookDevPkgNfo = lastQueriedPackageList.First(x => x.name == LDS_PACKAGE_NAME);
+            
+            string downloadUrl = string.Format(urlTemplate, lookDevPkgNfo.version, expectedSourceFolderName);
+            
+            using (var uwr = new UnityWebRequest(downloadUrl, UnityWebRequest.kHttpVerbGET))
             {
                 EditorApplication.LockReloadAssemblies();
 
@@ -182,7 +197,7 @@ namespace LookDev.Editor
                     if (!Directory.Exists(PackageTempDirectory))
                         Directory.CreateDirectory(PackageTempDirectory);
 
-                    var packagePath = $"{PackageTempDirectory}/LookDevStudioHDAssets.unitypackage";
+                    var packagePath = $"{PackageTempDirectory}/CachedLookDevStudioExtension.unitypackage";
                     try
                     {
                         File.WriteAllBytes(packagePath, uwr.downloadHandler.data);
@@ -196,6 +211,10 @@ namespace LookDev.Editor
                     catch
                     {
                         Debug.LogError("Failed to import package");
+
+                    }
+                    finally
+                    {
                         if (File.Exists(packagePath))
                             File.Delete(packagePath);
                     }
@@ -205,7 +224,7 @@ namespace LookDev.Editor
                     Debug.LogError($"Download stopped with error: {uwr.downloadHandler.error}");
                 }
             }
-            */
+            
         }
 
         static void Setup(LookDevWelcomeWindow window)

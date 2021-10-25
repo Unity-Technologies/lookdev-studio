@@ -19,6 +19,7 @@ namespace LookDev.Editor
         public bool IsRenderPipelineInitialized;
         public int CurrentCameraIndex;
         public CameraPositionPreset[] SavedCameraPositions = new CameraPositionPreset[10];
+        public bool EnableDeveloperMode = false;
         public bool EnableHDRISky = true;
         public bool EnableGroundPlane = true;
         public bool SnapGroundToObject = true;

@@ -542,6 +542,8 @@ namespace LookDev.Editor
                 break;
             }
 
+            if (!File.Exists(maxPath))
+                return;
 
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
 
@@ -604,6 +606,9 @@ namespace LookDev.Editor
                 command = command + modelImpotCmd;
             }
 
+
+            if (!File.Exists(mayaPath))
+                return;
 
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
 

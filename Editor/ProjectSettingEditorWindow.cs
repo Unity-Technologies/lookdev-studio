@@ -24,7 +24,7 @@ namespace LookDev.Editor
 
         public void ResetWindowPosition()
         {
-            minSize = new Vector2(400, 400);
+            minSize = new Vector2(400, 500);
             maxSize = minSize;
 
             float posX = LookDevSearchHelpers.searchViewEditorWindow.position.x - minSize.x - 10;
@@ -51,15 +51,33 @@ namespace LookDev.Editor
             EditorGUILayout.Space();
             EditorGUILayout.Space();
 
-            /*
+            
             GUILayout.BeginHorizontal();
             GUILayout.Label($"Make Prefabs for all meshes", EditorStyles.boldLabel, GUILayout.Width(200));
             projectSetting.MakePrefabsForAllMeshes = GUILayout.Toggle(projectSetting.MakePrefabsForAllMeshes, string.Empty);
             GUILayout.EndHorizontal();
+
+            if (projectSetting.MakePrefabsForAllMeshes)
+            {
+                GUILayout.BeginVertical("Box");
+                GUILayout.Label($"Output Name : {projectSetting.PrefabPrefix}[ModelName]{projectSetting.PrefabPostfix}.prefab", EditorStyles.boldLabel, GUILayout.Width(380));
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Prefix:", GUILayout.Width(100));
+                projectSetting.PrefabPrefix = GUILayout.TextField(projectSetting.PrefabPrefix);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Postfix", GUILayout.Width(100));
+                projectSetting.PrefabPostfix = GUILayout.TextField(projectSetting.PrefabPostfix);
+                GUILayout.EndHorizontal();
+
+                GUILayout.EndVertical();
+            }
             
             EditorGUILayout.Space();
             EditorGUILayout.Space();
-            */
+            
 
             GUILayout.Label($"DCC Editor of choice", EditorStyles.boldLabel, GUILayout.Width(200));
 

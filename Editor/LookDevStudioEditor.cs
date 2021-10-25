@@ -301,8 +301,15 @@ namespace LookDev.Editor
 
             string savePath = $"{assetPath.Replace(Path.GetExtension(assetPath), string.Empty)}.prefab";
 
-            if (Path.GetFileName(savePath).ToUpper().StartsWith("P_") == false)
-                savePath = savePath.Replace(Path.GetFileName(savePath), $"P_{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+
+            if (ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes)
+            {
+                if (Path.GetFileName(savePath).ToUpper().StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
+                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+
+                if (Path.GetFileName(savePath).ToUpper().EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
+                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
+            }
 
 
             if (string.IsNullOrEmpty(assetPath) == false)
@@ -316,9 +323,54 @@ namespace LookDev.Editor
                     SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Prefab Saved : {savePath}"), 4f);
 
                 LookDevSearchHelpers.SwitchCurrentProvider(2);
+
+                AssetDatabase.SaveAssets();
             }
 
         }
+
+        public static void MakePrefabByUserInput()
+        {
+            if (Selection.gameObjects.Length == 0)
+            {
+                Debug.LogWarning("Need to select GameObjects in the Hierarchy");
+                return;
+            }
+
+            // Filter Groups "Lights", "Camera", "PostProcess" and "Models"
+            if (Selection.gameObjects[0].transform?.parent == null)
+            {
+                Debug.LogError($"Could not save the GameObject : {Selection.gameObjects[0].name}");
+                return;
+            }
+
+            string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(Selection.gameObjects[0]);
+
+            string savePath = $"{assetPath.Replace(Path.GetExtension(assetPath), string.Empty)}.prefab";
+
+            if (ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes)
+            {
+                if (Path.GetFileName(savePath).ToUpper().StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
+                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+
+                if (Path.GetFileName(savePath).ToUpper().EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
+                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
+            }
+
+            if (string.IsNullOrEmpty(assetPath) == false)
+            {
+                savePath = AssetDatabase.GenerateUniqueAssetPath(savePath);
+
+                PrefabSaveAsWindow prefabSaveAsWindow = EditorWindow.GetWindow<PrefabSaveAsWindow>("Save As (Prefab)", true);
+                prefabSaveAsWindow.InitPrefabSaveAsWindow(Selection.gameObjects[0], savePath);
+
+                prefabSaveAsWindow.ShowUtility();
+                prefabSaveAsWindow.Focus();
+
+            }
+
+        }
+
 
 
         [CommandHandler("Commands/Save", CommandHint.Menu | CommandHint.Validate)]
@@ -362,6 +414,8 @@ namespace LookDev.Editor
                 PrefabUtility.ApplyPrefabInstance(PrefabUtility.GetNearestPrefabInstanceRoot(Selection.gameObjects[0]), InteractionMode.AutomatedAction);
                 LookDevSearchHelpers.SwitchCurrentProvider(2);
 
+                AssetDatabase.SaveAssets();
+
                 if (SceneView.lastActiveSceneView != null)
                     SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Prefab Saved : {assetPath}"), 4f);
             }
@@ -384,7 +438,7 @@ namespace LookDev.Editor
                 return;
             }
 
-            MakePrefab();
+            MakePrefabByUserInput();
 
         }
 

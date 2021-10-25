@@ -45,6 +45,8 @@ namespace LookDev.Editor
 
         [Header("Asset Post-processing"), Tooltip("Description")]
         public bool MakePrefabsForAllMeshes;
+        public string PrefabPrefix;
+        public string PrefabPostfix;
 
 
         [Header("Project Folders")]

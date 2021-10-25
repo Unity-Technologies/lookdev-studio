@@ -30,7 +30,7 @@ namespace LookDev.Editor
         static Queue<string> Msg = new Queue<string>();
 
 
-        [InitializeOnLoadMethod]
+        //[InitializeOnLoadMethod]
         static void RunServer()
         {
             DCCToUnity dToU = new DCCToUnity();
