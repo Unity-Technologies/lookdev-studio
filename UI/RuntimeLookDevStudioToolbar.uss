@@ -1,15 +1,18 @@
+.button {
+    background-color: rgb(88, 88, 88);
+    color: rgb(171, 171, 171);
+    min-width: 50px;
+    font-size: 24px;
+}
+
 .toolbarButton {
-    width: 26px;
-    height: 26px;
+    width: 40px;
+    height: 40px;
 }
 
 .cameraButton {
-    width: 25px;
-    height: 25px;
-    background-image: resource('Icon_Camera');
-    flex-direction: row-reverse;
-    justify-content: flex-end;
-    align-items: flex-start;
+    width: 40px;
+    height: 40px;
 }
 
 .selectedCameraButton {
@@ -23,11 +26,23 @@
     border-bottom-width: 2px;
 }
 
+.toolbarRoot {
+    background-color: rgb(56, 56, 56);
+    min-height: 60px;
+}
+
+.screenshotButton {
+    min-width: 80px;
+    min-height: 50px;
+    margin-left: 60px;
+}
+
 .cameraButtonLabel {
-    font-size: 10px;
+    font-size: 18px;
     position: absolute;
     top: 1px;
     right: 1px;
     width: 50%;
     height: 50%;
+    margin: 0 0 0 0;
 }

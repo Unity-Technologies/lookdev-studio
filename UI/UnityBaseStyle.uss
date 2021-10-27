@@ -1,0 +1,23 @@
+.unity-button {
+    -unity-text-align: middle-center;
+    flex: 0 0 auto;
+    overflow: hidden;
+    white-space: nowrap;
+    color: rgb(238, 238, 238);
+    background-color: rgb(88, 88, 88);
+    border-left-color: rgb(48, 48, 48);
+    border-top-color: rgb(48, 48, 48);
+    border-right-color: rgb(48, 48, 48);
+    border-bottom-color: rgb(36, 36, 36);
+    border-width: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    margin-top: 1px;
+    margin-right: 3px;
+    margin-bottom: 1px;
+    margin-left: 3px;
+    border-radius: 6px;
+    font-size: 20px;
+}

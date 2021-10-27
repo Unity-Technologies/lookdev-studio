@@ -14,6 +14,9 @@ namespace LookDev.Editor
         public static List<string> folders = new List<string>();
         public static string defaultFolder = "Assets/LookDev/Models";
 
+        public static bool showModel;
+        public static bool showPrefab;
+
         [SearchItemProvider]
         internal static SearchProvider CreateProvider()
         {
@@ -28,12 +31,24 @@ namespace LookDev.Editor
                     if (string.IsNullOrEmpty(projectPath) == false)
                         defaultFolder = projectPath;
 
+                    string filter = string.Empty;
+
+                    if (showModel)
+                        filter = filter + "t:Model ";
+                    if (showPrefab)
+                        filter = filter + "t:Prefab ";
+
                     string[] results;
 
                     if (folders.Count == 0)
                         results = AssetDatabase.FindAssets("t:Model t:Prefab " + context.searchQuery, new string[] { defaultFolder });
                     else
-                        results = AssetDatabase.FindAssets("t:Model t:Prefab " + context.searchQuery, folders.ToArray());
+                    {
+                        if (filter == string.Empty)
+                            return null;
+
+                        results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, folders.ToArray());
+                    }
 
                     foreach (var guid in results)
                     {

@@ -18,7 +18,7 @@ namespace LookDev.Editor
             var ui = uxmlTemplate.CloneTree();
             rootVisualElement.Add(ui);
 
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < LookDevCamera.NUM_CAMERA_INDICES; ++i)
             {
                 var cameraButton = rootVisualElement.Q<Button>($"cameraButton{i}");
                 var index = i;
@@ -26,10 +26,7 @@ namespace LookDev.Editor
             }
 
             _saveCameraButton = rootVisualElement.Q<Button>("saveCameraButton");
-            _saveCameraButton.clicked += () =>
-            {
-                LookDevShortcutsOverlay.SaveCameraPosition(LookDevPreferences.instance.CurrentCameraIndex);
-            };
+            _saveCameraButton.clicked += () => { LookDevShortcutsOverlay.SaveCameraPosition(); };
 
             _autoSaveCameraToggle = rootVisualElement.Q<Toggle>("autoSaveCameraToggle");
             _autoSaveCameraToggle.RegisterValueChangedCallback(evt =>
@@ -51,11 +48,12 @@ namespace LookDev.Editor
 
         void OnCameraLoaded(int index)
         {
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < LookDevCamera.NUM_CAMERA_INDICES; ++i)
             {
                 var cameraButton = rootVisualElement.Q<Button>($"cameraButton{i}");
+                var lookDevCamera = LookDevHelpers.GetLookDevCam();
 
-                if (i == LookDevPreferences.instance.CurrentCameraIndex)
+                if (i == lookDevCamera.CurrentCameraIndex)
                 {
                     cameraButton.AddToClassList("selectedCameraButton");
                 }

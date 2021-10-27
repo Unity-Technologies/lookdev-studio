@@ -1,6 +1,8 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -31,13 +33,13 @@ namespace LookDev.Editor
         public static Action<Cubemap> OnSwapHDRi;
         public static Action<Material> OnSwapSkybox;
 
-        public static void RecordLastHeroAsset(UnityEngine.Object obj)
+        public static void RecordLastHeroAsset(Object obj)
         {
             var guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(obj));
             EditorPrefs.SetString(LastHeroAssetGUIDKey, guid);
         }
 
-        public static UnityEngine.Object GetLastHeroAsset()
+        public static Object GetLastHeroAsset()
         {
             var guid = EditorPrefs.GetString(LastHeroAssetGUIDKey, String.Empty);
             if (string.IsNullOrEmpty(guid))
@@ -60,12 +62,26 @@ namespace LookDev.Editor
             RecordLastHeroAsset(target);
         }
 
-        public static Camera GetLookDevCam()
+        public static LookDevCamera GetLookDevCam()
         {
-            var cameras = GameObject.FindObjectsOfType<Camera>();
-            foreach (var cam in cameras)
+            var lookDevCameras = GameObject.FindObjectsOfType<LookDevCamera>();
+            if (lookDevCameras.Length == 0)
             {
-                if (cam.tag == "MainCamera")
+                var lookDevCameraGo = GameObject.FindWithTag("LookDevCam");
+                if (lookDevCameraGo == null)
+                {
+                    lookDevCameraGo = GameObject.FindObjectOfType<Camera>().gameObject;
+                }
+                
+                var lookDevCamera = lookDevCameraGo.AddComponent<LookDevCamera>();
+                lookDevCamera.OnCreated();
+                
+                lookDevCameras = new[] { lookDevCamera };
+            }
+
+            foreach (var cam in lookDevCameras)
+            {
+                if (cam.Camera.CompareTag("MainCamera"))
                 {
                     return cam;
                 }
@@ -166,12 +182,12 @@ namespace LookDev.Editor
             }
 
             var vCam = GetLookDevCam();
-            float resetDist = CalculateMinimumDistance(vCam, basis, out Vector3 centroid);
+            float resetDist = CalculateMinimumDistance(vCam.Camera, basis, out Vector3 centroid);
 
             //Turntable.Controls.Reset(resetDist);
             //Turntable.Controls.Origin = centroid;
             vCam.transform.position = centroid + Vector3.forward * resetDist;
-            
+
             SceneView sv = SceneView.lastActiveSceneView;
             sv.Frame(GetBoundsWithChildren(basis));
         }
@@ -212,7 +228,8 @@ namespace LookDev.Editor
                 Object sampleObj = DragAndDrop.objectReferences[0];
                 // Since there is no possibility that users multi-select different types from the Search Browser
 
-                if (sampleObj.GetType() != typeof(UnityEngine.Material) && sampleObj.GetType() != typeof(UnityEngine.Texture))
+                if (sampleObj.GetType() != typeof(Material) &&
+                    sampleObj.GetType() != typeof(Texture))
                 {
                     return true;
                 }
@@ -661,9 +678,12 @@ namespace LookDev.Editor
 
             if (foundModel && DragDropModelPostProcessor.latestImportedAssets.Count != 0)
             {
-                if (EditorUtility.DisplayDialog("Material set-up", $"Do you want to open the Texture Allocator to set up materials now?\nThe total number of imported Assets is: {DragDropModelPostProcessor.latestImportedAssets.Count.ToString()}, including newly generated Materials.", "Yes", "No"))
+                if (EditorUtility.DisplayDialog("Material set-up",
+                    $"Do you want to open the Texture Allocator to set up materials now?\nThe total number of imported Assets is: {DragDropModelPostProcessor.latestImportedAssets.Count.ToString()}, including newly generated Materials.",
+                    "Yes", "No"))
                 {
-                    Unity.EditorCoroutines.Editor.EditorCoroutineUtility.StartCoroutine(TextureLinkBrowser.Inst.InitTextureLinkBrowserOnImportingWithDelay(), TextureLinkBrowser.Inst);
+                    EditorCoroutineUtility.StartCoroutine(
+                        TextureLinkBrowser.Inst.InitTextureLinkBrowserOnImportingWithDelay(), TextureLinkBrowser.Inst);
                 }
                 else
                 {
@@ -684,8 +704,8 @@ namespace LookDev.Editor
         //TMP_EditorUtility.cs
         public static EditorWindow GetGameview()
         {
-            System.Reflection.Assembly assembly = typeof(UnityEditor.EditorWindow).Assembly;
-            System.Type type = assembly.GetType("UnityEditor.GameView");
+            Assembly assembly = typeof(EditorWindow).Assembly;
+            Type type = assembly.GetType("UnityEditor.GameView");
             return EditorWindow.GetWindow(type);
         }
 

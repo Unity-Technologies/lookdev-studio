@@ -85,7 +85,7 @@ namespace LookDev.Editor
 
             _lookDevPreferences.EnableOrbit = false;
             _lookDevPreferences.EnableTurntable = false;
-            _lookDevPreferences.CurrentCameraIndex = -1;
+            _lookDevPreferences.IsCameraLoaded = false;
 
             EditorApplication.update += OnLookDevModeUpdate;
             SceneView.duringSceneGui += OnDuringSceneGuiForDragDrop;

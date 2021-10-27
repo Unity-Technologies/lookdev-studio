@@ -325,7 +325,30 @@ namespace LookDev.Editor
             for (int i = 0; i < supportedFormats.Count; i++)
                 filter.Extensions[i] = supportedFormats[i].Replace(".", string.Empty);
 
+            string[] paths = new string[1];
 
+            try
+            {
+                paths = StandaloneFileBrowser.OpenFilePanel("Select the target files to be imported", previousOpendFolder, new ExtensionFilter[] { filter }, true);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"StandaloneFileBrowser Exception : {ex.ToString()}");
+            }
+            finally
+            {
+                if (paths.Length != 0)
+                {
+                    if (string.IsNullOrEmpty(paths[0]) == false)
+                    {
+                        previousOpendFolder = paths[0].Replace(Path.GetFileName(paths[0]), string.Empty);
+                        LookDevHelpers.Import(paths);
+                    }
+                }
+            }
+
+            // "ArgumentException on Unity 2021.2.x : Value must be a Com object."
+            /*
             StandaloneFileBrowser.OpenFilePanelAsync("Select the target files to be imported", previousOpendFolder, new ExtensionFilter[] { filter }, true, (string[] targetFiles) => 
             {
                 if (targetFiles.Length == 0)
@@ -334,7 +357,7 @@ namespace LookDev.Editor
                 previousOpendFolder = targetFiles[0].Replace(Path.GetFileName(targetFiles[0]), string.Empty);
                 LookDevHelpers.Import(targetFiles);
             });
-
+            */
         }
 
 

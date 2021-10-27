@@ -14,6 +14,9 @@ namespace LookDev.Editor
         public static List<string> folders = new List<string>();
         public static string[] defaultFolders = new string[] { "Assets/LookDev/Scenes", "Assets/LookDev/Lights" };
 
+        public static bool showLightingPresetScene;
+        public static bool showLightingGroup;
+
 
         [SearchItemProvider]
         internal static SearchProvider CreateProvider()
@@ -31,15 +34,32 @@ namespace LookDev.Editor
 
                     string[] results;
 
+                    string filter = string.Empty;
+
+                    if (showLightingPresetScene)
+                        filter = filter + "t:Scene ";
+                    if (showLightingGroup)
+                        filter = filter + "t:Prefab ";
+
                     if (folders.Count == 0)
-                        results = AssetDatabase.FindAssets("t:Scene t:Prefab" + context.searchQuery, defaultFolders);
+                        results = AssetDatabase.FindAssets("t:Scene t:Prefab " + context.searchQuery, defaultFolders);
                     else
-                        results = AssetDatabase.FindAssets("t:Scene t:Prefab" + context.searchQuery, folders.ToArray());
+                    {
+                        if (filter == string.Empty)
+                            return null;
+
+                        results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, folders.ToArray());
+                    }
 
                     foreach (var guid in results)
                     {
                         string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                         Object assetObj = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+
+                        string previewPath = assetPath.Replace(Path.GetFileName(assetPath), Path.GetFileNameWithoutExtension(assetPath) + ".png");
+
+                        if (File.Exists(Path.GetFullPath(previewPath)) == false)
+                            continue;
 
                         if (PrefabUtility.GetPrefabAssetType(assetObj) != PrefabAssetType.NotAPrefab)
                         {

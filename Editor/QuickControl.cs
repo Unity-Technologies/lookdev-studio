@@ -33,6 +33,7 @@ namespace LookDev.Editor
             if (GUILayout.Button("IMPORT", GUILayout.Width((int)((float)position.width * 0.5f)), GUILayout.Height(32)))
             {
                 AssetManageHelpers.ImportAsset();
+                EditorGUIUtility.ExitGUI();
             }
 
             if (GUILayout.Button(new GUIContent(Resources.Load<Texture>("Icon_NewMatPreset"), "Create Material by Presets"), GUILayout.Width(32), GUILayout.Height(32)))

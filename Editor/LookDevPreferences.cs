@@ -1,24 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace LookDev.Editor
 {
-    [FilePath("Assets/LookDevPreferences.asset", FilePathAttribute.Location.ProjectFolder)]
+    [FilePath("Assets/LookDevStudioSettings/LookDevPreferences.asset", FilePathAttribute.Location.ProjectFolder)]
     public class LookDevPreferences : ScriptableSingleton<LookDevPreferences>
     {
-        [Serializable]
-        public struct CameraPositionPreset
-        {
-            public Vector3 Position;
-            public Quaternion Rotation;
-        }
-
         public bool AreAssetsInstalled;
         public bool IsRenderPipelineInitialized;
-        public int CurrentCameraIndex;
-        public CameraPositionPreset[] SavedCameraPositions = new CameraPositionPreset[10];
+        public bool IsCameraLoaded = false;
         public bool EnableDeveloperMode = false;
         public bool EnableHDRISky = true;
         public bool EnableGroundPlane = true;
@@ -70,12 +60,6 @@ namespace LookDev.Editor
 
         void OnEnable()
         {
-            //Initialize the position presets to 10 always
-            if (SavedCameraPositions.Length < 10)
-            {
-                SavedCameraPositions = new CameraPositionPreset[10];
-            }
-            
             _lookDevSessionGuids = AssetDatabase.FindAssets("t:LookDevSession");
 
             _lockedIcon =

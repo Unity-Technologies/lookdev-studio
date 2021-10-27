@@ -25,11 +25,6 @@ namespace LookDev.Editor
 
         const string ScreencaptureFolder = "Screenshots";
 
-        static double _toastLastFrameTime;
-        static string _toastMessage;
-        static float _toastElapsed;
-        static float _toastDuration;
-
         public static event Action<int> OnCameraPositionLoaded;
 
         public static void RenderExtension(LoadExtensionDelegate loadExtensionMethod)
@@ -52,9 +47,12 @@ namespace LookDev.Editor
 
         public static void Update()
         {
-            if (_lookDevPreferences.CurrentCameraIndex == -1)
+            if (!_lookDevPreferences.IsCameraLoaded)
             {
+                var lookDevCamera = LookDevHelpers.GetLookDevCam();
+                lookDevCamera.OnCreated();
                 LoadCameraPosition(0);
+                _lookDevPreferences.IsCameraLoaded = true;
             }
 
             if (_loadingCameraPosition)
@@ -81,13 +79,14 @@ namespace LookDev.Editor
             {
                 SceneView sv = SceneView.lastActiveSceneView;
                 var driver = CameraSync.instance.GetDriver(sv);
-                driver.targetCamera = LookDevHelpers.GetLookDevCam();
+                var lookDevCam = LookDevHelpers.GetLookDevCam();
+                driver.targetCamera = lookDevCam.Camera;
                 driver.syncMode = SyncMode.SceneViewToGameView;
                 driver.syncing = true;
 
                 if (AutoSaveCameraPosition)
                 {
-                    SaveCameraPosition(_lookDevPreferences.CurrentCameraIndex);
+                    SaveCameraPosition();
                 }
             }
 
@@ -349,35 +348,27 @@ namespace LookDev.Editor
 
         public static void LoadCameraPosition(int index)
         {
-            var cameraRig = GameObject.FindWithTag("LookDevCam");
-            var camera = cameraRig.gameObject.GetComponentInChildren<Camera>();
+            var lookDevCamera = LookDevHelpers.GetLookDevCam();
 
             SceneView sv = SceneView.lastActiveSceneView;
             var driver = CameraSync.instance.GetDriver(sv);
             driver.syncMode = SyncMode.GameViewToSceneView;
-            driver.targetCamera = camera;
+            driver.targetCamera = lookDevCamera.Camera;
             driver.syncing = true;
 
-            var savedPosition = _lookDevPreferences.SavedCameraPositions[index];
-            camera.transform.position = savedPosition.Position;
-            camera.transform.rotation = savedPosition.Rotation;
-
+            lookDevCamera.LoadCameraPreset(index);
             _loadingCameraPosition = true;
 
-            _lookDevPreferences.CurrentCameraIndex = index;
             OnCameraPositionLoaded?.Invoke(index);
         }
 
-        public static void SaveCameraPosition(int index)
+        public static void SaveCameraPosition()
         {
             var sv = SceneView.lastActiveSceneView;
             var driver = CameraSync.instance.GetDriver(sv);
             var camera = driver.targetCamera;
-            _lookDevPreferences.SavedCameraPositions[index] = new LookDevPreferences.CameraPositionPreset
-            {
-                Position = camera.transform.position,
-                Rotation = camera.transform.rotation
-            };
+            var lookDevCamera = LookDevHelpers.GetLookDevCam();
+            lookDevCamera.SaveCameraPosition(camera.transform.position, camera.transform.rotation);
         }
 
         static void CameraPresetShortcut(SceneView sv)

@@ -24,9 +24,16 @@ namespace LookDev.Editor
         public List<string> pathForSkybox;
         public List<string> pathForAnimation;
 
+        public List<string> paths;
+
+        public bool showPrefab = true;
+        public bool showModel = true;
+        public bool showLightingPresetScene = true;
+        public bool showLightingGroup = true;
+
         public LookDevFilter()
         {
-            filterName = string.Empty;
+            filterName = "NewFilter";
             pathForMaterial = new List<string>();
             pathForTexture = new List<string>();
             pathForModel = new List<string>();
@@ -34,6 +41,12 @@ namespace LookDev.Editor
             pathForLight = new List<string>();
             pathForSkybox = new List<string>();
             pathForAnimation = new List<string>();
+            paths = new List<string>();
+
+            showPrefab = false;
+            showModel = false;
+            showLightingPresetScene = false;
+            showLightingGroup = false;
         }
     }
 
@@ -170,7 +183,8 @@ namespace LookDev.Editor
                 pathForShader = new List<string>() { "Assets/LookDev/Shaders" },
                 pathForLight = new List<string>() { "Assets/LookDev/Lights" },
                 pathForSkybox = new List<string>() { "Assets/LookDev/Setup/Skybox/UnityHDRI" },
-                pathForAnimation = new List<string>() { "Assets/LookDev/Animations" }
+                pathForAnimation = new List<string>() { "Assets/LookDev/Animations" },
+                paths = new List<string>() { "Assets/LookDev" }
             };
 
             SaveFilter(defaultFilter);
@@ -190,6 +204,14 @@ namespace LookDev.Editor
                 AssetDatabase.CreateFolder("Assets/LookDev/Setup", "Filter");
 
             RefreshFilters();
+
+            // Reset
+            foreach (KeyValuePair<string, LookDevFilter> keyValuePair in filters)
+            {
+                keyValuePair.Value.enabled = false;
+            }
+
+            OnChangedFilters();
 
         }
 
@@ -272,6 +294,21 @@ namespace LookDev.Editor
                             globalFilter.pathForAnimation.Add(path);
                     }
 
+                    // Paths
+                    foreach (string path in keyValuePair.Value.paths)
+                    {
+                        if (AssetDatabase.IsValidFolder(path) == false)
+                            continue;
+
+                        if (globalFilter.paths.Contains(path) == false)
+                            globalFilter.paths.Add(path);
+                    }
+
+                    globalFilter.showPrefab = globalFilter.showPrefab | keyValuePair.Value.showPrefab;
+                    globalFilter.showModel = globalFilter.showModel | keyValuePair.Value.showModel;
+                    globalFilter.showLightingPresetScene = globalFilter.showLightingPresetScene | keyValuePair.Value.showLightingPresetScene;
+                    globalFilter.showLightingGroup = globalFilter.showLightingGroup | keyValuePair.Value.showLightingGroup;
+
                 }
             }
 
@@ -284,6 +321,7 @@ namespace LookDev.Editor
             if (gfilter == null)
                 return;
 
+            /*
             SearchProviderForMaterials.folders = gfilter.pathForMaterial;
             SearchProviderForTextures.folders = gfilter.pathForTexture;
             SearchProviderForModels.folders = gfilter.pathForModel;
@@ -292,6 +330,23 @@ namespace LookDev.Editor
             SearchProviderForAnimation.folders = gfilter.pathForAnimation;
 
             SetAssetsFolders?.Invoke(gfilter.pathForSkybox.ToArray());
+            */
+
+            SearchProviderForMaterials.folders = gfilter.paths;
+            SearchProviderForTextures.folders = gfilter.paths;
+            SearchProviderForModels.folders = gfilter.paths;
+            SearchProviderForShader.folders = gfilter.paths;
+            SearchProviderForLight.folders = gfilter.paths;
+            SearchProviderForAnimation.folders = gfilter.paths;
+
+            SearchProviderForModels.showModel = gfilter.showModel;
+            SearchProviderForModels.showPrefab = gfilter.showPrefab;
+
+            SearchProviderForLight.showLightingPresetScene = gfilter.showLightingPresetScene;
+            SearchProviderForLight.showLightingGroup = gfilter.showLightingGroup;
+
+            // Skybox(HDRi)
+            SetAssetsFolders?.Invoke(gfilter.paths.ToArray());
         }
 
 
@@ -357,6 +412,7 @@ namespace LookDev.Editor
                     createNewFilterWindow.ResetWindowPosition();
                     createNewFilterWindow.ShowModalUtility();
 
+                    OnChangedFilters();
                     GUIUtility.ExitGUI();
 
                 }

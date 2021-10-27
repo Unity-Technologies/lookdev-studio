@@ -50,6 +50,9 @@ namespace LookDev.Editor
 
                         foreach (Object obj in allObjs)
                         {
+                            if (obj == null)
+                                continue;
+
                             if (obj.GetType() == typeof(AnimationClip))
                                 AnimClips.Add(obj as AnimationClip);
                         }

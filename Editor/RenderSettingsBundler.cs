@@ -256,5 +256,46 @@ namespace LookDev.Editor
                 }
             }
         }
+
+
+        enum SyncMode
+        {
+            Push,
+            Pull
+        }
+
+        static void Synchronize(SyncMode mode)
+        {
+            var externalPath = EditorUtility.OpenFolderPanel("Select Destination", "Assets", "");
+
+            if (externalPath == String.Empty)
+                return;
+            
+            
+            const string LDS_Subpath = "LookDev";
+            string internalPath = Path.Combine(Application.dataPath,LDS_Subpath);
+            externalPath = Path.Combine(externalPath, LDS_Subpath);
+
+            switch (mode)
+            {
+                case SyncMode.Push:
+                    DirectoryCopy(internalPath, externalPath, true);
+                    break;
+                case SyncMode.Pull:
+                    DirectoryCopy(externalPath, internalPath, true);
+                    break;
+            }
+        }
+
+        [MenuItem("LookDev Studio/Sync/Push Configuration")]
+        static void Push()
+        {
+            Synchronize(SyncMode.Push);
+        }
+        [MenuItem("LookDev Studio/Sync/Pull Configuration")]
+        static void Pull()
+        {
+            Synchronize(SyncMode.Pull);
+        }
     }
 }

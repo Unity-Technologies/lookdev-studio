@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/LookDev/LookDevStudioToolbar.uss?fileID=7433441132597879392&amp;guid=82ebf71904b939845b676ff14c7a8355&amp;type=3#LookDevStudioToolbar" />
-    <ui:VisualElement name="ToolbarRoot" style="flex-direction: row; height: 35px;">
+    <Style src="project://database/Packages/com.unity.lookdevstudio/UI/LookDevStudioToolbar.uss?fileID=7433441132597879392&amp;guid=82ebf71904b939845b676ff14c7a8355&amp;type=3#LookDevStudioToolbar" />
+    <ui:VisualElement name="ToolbarRoot" class="toolbarRoot" style="flex-direction: row; height: 35px;">
         <ui:VisualElement style="flex-direction: row; justify-content: space-between; flex-grow: 1; flex-shrink: 0; align-items: center;">
             <ui:VisualElement name="ToolbarButtonGroup" style="flex-direction: row; justify-content: flex-start;">
                 <ui:Button text="T1" display-tooltip-when-elided="true" class="toolbarButton" />
@@ -11,19 +11,25 @@
                 <ui:Button text="T6" display-tooltip-when-elided="true" class="toolbarButton" />
             </ui:VisualElement>
             <ui:VisualElement name="CameraButtonGroup" style="justify-content: center; flex-direction: row; align-items: center;">
-                <ui:Button text="1" display-tooltip-when-elided="true" name="cameraButton0" class="cameraButton selectedCameraButton" />
-                <ui:Button text="2" display-tooltip-when-elided="true" name="cameraButton1" class="cameraButton" />
-                <ui:Button text="3" display-tooltip-when-elided="true" name="cameraButton2" class="cameraButton" />
-                <ui:Button text="4" display-tooltip-when-elided="true" name="cameraButton3" class="cameraButton" />
-                <ui:Button text="5" display-tooltip-when-elided="true" name="cameraButton4" class="cameraButton" />
-                <ui:Button text="6" display-tooltip-when-elided="true" name="cameraButton5" class="cameraButton" />
-                <ui:Button text="7" display-tooltip-when-elided="true" name="cameraButton6" class="cameraButton" />
-                <ui:Button text="8" display-tooltip-when-elided="true" name="cameraButton7" class="cameraButton" />
-                <ui:Button text="9" display-tooltip-when-elided="true" name="cameraButton8" class="cameraButton" />
-                <ui:Button text="0" display-tooltip-when-elided="true" name="cameraButton9" class="cameraButton" />
+                <ui:Button display-tooltip-when-elided="true" name="cameraButton0" class="cameraButton selectedCameraButton">
+                    <ui:Label text="1" display-tooltip-when-elided="true" class="cameraButtonLabel" />
+                </ui:Button>
+                <ui:Button display-tooltip-when-elided="true" name="cameraButton1" class="cameraButton">
+                    <ui:Label text="2" display-tooltip-when-elided="true" class="cameraButtonLabel" />
+                </ui:Button>
+                <ui:Button display-tooltip-when-elided="true" name="cameraButton2" class="cameraButton">
+                    <ui:Label text="3" display-tooltip-when-elided="true" class="cameraButtonLabel" />
+                </ui:Button>
+                <ui:Button display-tooltip-when-elided="true" name="cameraButton3" class="cameraButton">
+                    <ui:Label text="4" display-tooltip-when-elided="true" class="cameraButtonLabel" />
+                </ui:Button>
+                <ui:Button display-tooltip-when-elided="true" name="cameraButton4" class="cameraButton">
+                    <ui:Label text="5" display-tooltip-when-elided="true" class="cameraButtonLabel" />
+                </ui:Button>
                 <ui:Button text="Save Cam" display-tooltip-when-elided="true" name="saveCameraButton" style="margin-left: 10px;" />
-                <ui:Label text="Auto Save Cam" display-tooltip-when-elided="true" style="width: 110px; -unity-text-align: upper-right;" />
+                <ui:Label text="Auto Save Cam" display-tooltip-when-elided="true" name="autoSaveCameraToggleLabel" style="width: 110px; -unity-text-align: upper-right;" />
                 <ui:Toggle name="autoSaveCameraToggle" />
+                <ui:Button display-tooltip-when-elided="true" name="ScreenshotButton" class="screenshotButton" style="background-image: resource(&apos;EditorIcons/ScreenshotIcon&apos;); -unity-background-scale-mode: scale-to-fit; visibility: hidden;" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

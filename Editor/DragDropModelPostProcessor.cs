@@ -1,9 +1,8 @@
-using UnityEditor;
-using UnityEngine;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using Object = UnityEngine.Object;
+using UnityEditor;
+using UnityEngine;
 
 namespace LookDev.Editor
 {
@@ -66,6 +65,7 @@ namespace LookDev.Editor
                         break;
                     }
                 }
+
                 if (!isNormalMap)
                 {
                     foreach (var suffix in normalMapLetterSuffixes)
@@ -141,7 +141,8 @@ namespace LookDev.Editor
                     continue;
 
                 // Check about whether the model imported on LookDev Mode
-                if (imported.ToLower().Contains("lookdev/setup") || !imported.ToLower().Contains(("LookDev/").ToLower()))
+                if (imported.ToLower().Contains("lookdev/setup") ||
+                    !imported.ToLower().Contains(("LookDev/").ToLower()))
                     continue;
 
                 // Ganerate Material
@@ -161,18 +162,34 @@ namespace LookDev.Editor
 
 
                 // Generating Prefab automatically, if "ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes" is On
-                if (prop != null && LookDevHelpers.IsModel(Path.GetExtension(imported)) && ProjectSettingWindow.projectSetting != null)
+                if (prop != null && LookDevHelpers.IsModel(Path.GetExtension(imported)) &&
+                    ProjectSettingWindow.projectSetting != null)
                 {
                     if (ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes)
                     {
-
                         string savePath = $"{imported.Replace(Path.GetExtension(imported), string.Empty)}.prefab";
 
-                        if (Path.GetFileName(savePath).ToUpper().StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
-                            savePath = savePath.Replace(Path.GetFileName(savePath), $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+                        if (!string.IsNullOrEmpty(ProjectSettingWindow.projectSetting.PrefabPrefix))
+                        {
+                            if (Path.GetFileName(savePath).ToUpper()
+                                    .StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false &&
+                                ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
+                            {
+                                savePath = savePath.Replace(Path.GetFileName(savePath),
+                                    $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
+                            }
+                        }
 
-                        if (Path.GetFileName(savePath).ToUpper().EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
-                            savePath = savePath.Replace(Path.GetFileName(savePath), $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
+                        if (!string.IsNullOrEmpty(ProjectSettingWindow.projectSetting.PrefabPostfix))
+                        {
+                            if (Path.GetFileName(savePath).ToUpper()
+                                    .EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false &&
+                                ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
+                            {
+                                savePath = savePath.Replace(Path.GetFileName(savePath),
+                                    $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
+                            }
+                        }
 
                         //Debug.Log(savePath);
 
@@ -211,7 +228,8 @@ namespace LookDev.Editor
                 .ToArray();
 
             // Check MeshFilter's Existence
-            var meshFilters = AssetDatabase.LoadAllAssetsAtPath(assetPath).Where(x => x.GetType() == typeof(Mesh)).ToArray();
+            var meshFilters = AssetDatabase.LoadAllAssetsAtPath(assetPath).Where(x => x.GetType() == typeof(Mesh))
+                .ToArray();
             if (meshFilters.Length == 0)
                 return false;
 
@@ -269,6 +287,50 @@ namespace LookDev.Editor
             }
 
             return true;
+        }
+
+        void OnPostprocessModel(GameObject g)
+        {
+            var meshFilters = g.GetComponentsInChildren<MeshFilter>();
+            foreach (var meshFilter in meshFilters)
+            {
+                if (meshFilter.sharedMesh.name.ToLower().EndsWith("col"))
+                {
+                    meshFilter.gameObject.AddComponent<MeshCollider>();
+
+                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
+                    GameObject.DestroyImmediate(meshRenderer);
+                }
+                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("colx"))
+                {
+                    var meshCollider = meshFilter.gameObject.AddComponent<MeshCollider>();
+                    meshCollider.convex = true;
+
+                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
+                    GameObject.DestroyImmediate(meshRenderer);
+                }
+                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("colb"))
+                {
+                    meshFilter.gameObject.AddComponent<BoxCollider>();
+
+                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
+                    GameObject.DestroyImmediate(meshRenderer);
+                }
+                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("cols"))
+                {
+                    meshFilter.gameObject.AddComponent<SphereCollider>();
+
+                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
+                    GameObject.DestroyImmediate(meshRenderer);
+                }
+                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("colcap"))
+                {
+                    meshFilter.gameObject.AddComponent<CapsuleCollider>();
+
+                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
+                    GameObject.DestroyImmediate(meshRenderer);
+                }
+            }
         }
     }
 }

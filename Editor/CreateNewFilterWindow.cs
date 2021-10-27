@@ -35,10 +35,19 @@ namespace LookDev.Editor
 
         }
 
+        private void OnDisable()
+        {
+            if (newFilter == null)
+            {
+                LookDevSearchFilters.SaveFilter(newFilter);
+                LookDevSearchFilters.RefreshFilters();
+            }
+        }
+
 
         public void ResetWindowPosition()
         {
-            minSize = new Vector2(400, 520);
+            minSize = new Vector2(400, 350);
             maxSize = minSize;
 
             float posX = LookDevSearchHelpers.searchViewEditorWindow.position.x - minSize.x - 10;
@@ -85,7 +94,7 @@ namespace LookDev.Editor
 
         private void OnGUI()
         {
-            scrollVector = GUILayout.BeginScrollView(scrollVector, GUILayout.Width(400), GUILayout.Height(520));
+            scrollVector = GUILayout.BeginScrollView(scrollVector, GUILayout.Width(minSize.x), GUILayout.Height(minSize.y));
 
             EditorGUILayout.Space();
 
@@ -99,6 +108,8 @@ namespace LookDev.Editor
             EditorGUILayout.Space();
             EditorGUILayout.Space();
 
+            ShowFilterInfo("Paths", ref newFilter.paths);
+            /*
             ShowFilterInfo("Materials", ref newFilter.pathForMaterial);
             ShowFilterInfo("Textures", ref newFilter.pathForTexture);
             ShowFilterInfo("Models", ref newFilter.pathForModel);
@@ -106,6 +117,19 @@ namespace LookDev.Editor
             ShowFilterInfo("Lights", ref newFilter.pathForLight);
             ShowFilterInfo("Skyboxes", ref newFilter.pathForSkybox);
             ShowFilterInfo("Animations", ref newFilter.pathForAnimation);
+            */
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            GUILayout.Label("Visible types", EditorStyles.boldLabel);
+            EditorGUILayout.Space();
+            GUILayout.BeginVertical("Box");
+            newFilter.showModel = GUILayout.Toggle(newFilter.showModel, new GUIContent("Show Models", string.Empty));
+            newFilter.showPrefab = GUILayout.Toggle(newFilter.showPrefab, new GUIContent("Show Prefabs", string.Empty));
+            newFilter.showLightingPresetScene = GUILayout.Toggle(newFilter.showLightingPresetScene, new GUIContent("Show Lighting Preset Scene", string.Empty));
+            newFilter.showLightingGroup = GUILayout.Toggle(newFilter.showLightingGroup, new GUIContent("Show Lighting Group", string.Empty));
+            GUILayout.EndVertical();
 
             EditorGUILayout.Space();
             EditorGUILayout.Space();
