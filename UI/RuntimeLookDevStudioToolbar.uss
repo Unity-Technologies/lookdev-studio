@@ -46,3 +46,13 @@
     height: 50%;
     margin: 0 0 0 0;
 }
+
+.screenshotButton {
+    visibility: visible;
+    width: 60px;
+    height: 28px;
+    margin-left: 100px;
+    margin-right: 3px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+}

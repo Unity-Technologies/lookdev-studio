@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Graphs;
@@ -14,6 +15,12 @@ namespace LookDev.Editor
     {
         public static event Action<LookDevSession> OnDirectivesCreate;
         public static event Action<LookDevSession> OnDirectivesLoad;
+        
+        enum SyncMode
+        {
+            Push,
+            Pull
+        }
         
         [MenuItem("LookDev Studio/Create RenderSettings Configuration")]
         public static void CreateBundle()
@@ -145,6 +152,9 @@ namespace LookDev.Editor
             AssetDatabase.ImportPackage(destination, false);
         }
 
+        /// <summary>
+        /// Creates a new Unity project clone with existing render settings.
+        /// </summary>
         static void CopyProjectExport()
         {
             
@@ -173,7 +183,6 @@ namespace LookDev.Editor
                     string[] deps = AssetDatabase.GetDependencies(path, true);
                     allDeps.AddRange(deps);
 
-                    //Debug.Log($"{fi.Name}:\n{string.Join("\n", deps)}");
                     for (int i = 0; i < deps.Length; i++) // Avoid foreach allocs.
                     {
                         if (deps[i].StartsWith("Assets/LookDev"))
@@ -256,14 +265,7 @@ namespace LookDev.Editor
                 }
             }
         }
-
-
-        enum SyncMode
-        {
-            Push,
-            Pull
-        }
-
+        
         static void Synchronize(SyncMode mode)
         {
             var externalPath = EditorUtility.OpenFolderPanel("Select Destination", "Assets", "");
@@ -271,7 +273,23 @@ namespace LookDev.Editor
             if (externalPath == String.Empty)
                 return;
             
-            
+            {//Ensure a valid Unity project path
+                var expectedDirs = new HashSet<string>() { "Assets", "ProjectSettings", "Packages" };
+                DirectoryInfo info = new DirectoryInfo(externalPath);
+                foreach (var dInfo in info.EnumerateDirectories())
+                {
+                    // Attempt to "pop" directory, and early-exit if possible.
+                    if (expectedDirs.Remove(dInfo.Name) && expectedDirs.Count == 0)
+                        break;
+                }
+
+                if (expectedDirs.Count > 0)
+                {
+                    Debug.LogError("Invalid Unity project directory.");
+                    return;
+                }
+            }
+
             const string LDS_Subpath = "LookDev";
             string internalPath = Path.Combine(Application.dataPath,LDS_Subpath);
             externalPath = Path.Combine(externalPath, LDS_Subpath);
@@ -285,6 +303,8 @@ namespace LookDev.Editor
                     DirectoryCopy(externalPath, internalPath, true);
                     break;
             }
+            
+            Debug.Log($"{Enum.GetName(typeof(SyncMode), mode)} Sync completed successfully.");
         }
 
         [MenuItem("LookDev Studio/Sync/Push Configuration")]

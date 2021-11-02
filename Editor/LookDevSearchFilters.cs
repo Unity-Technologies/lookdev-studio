@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Runtime.Serialization.Formatters.Binary;
 using System;
 using System.IO;
+using System.Linq;
+
+using Object = UnityEngine.Object;
 
 namespace LookDev.Editor
 {
@@ -26,6 +29,8 @@ namespace LookDev.Editor
 
         public List<string> paths;
 
+        public List<string> objectGuid;
+
         public bool showPrefab = true;
         public bool showModel = true;
         public bool showLightingPresetScene = true;
@@ -42,6 +47,8 @@ namespace LookDev.Editor
             pathForSkybox = new List<string>();
             pathForAnimation = new List<string>();
             paths = new List<string>();
+
+            objectGuid = new List<string>();
 
             showPrefab = false;
             showModel = false;
@@ -68,7 +75,7 @@ namespace LookDev.Editor
         CreateNewFilterWindow createNewFilterWindow;
 
 
-        static void AddFilter(LookDevFilter lookDevFilter)
+        public static void AddFilter(LookDevFilter lookDevFilter)
         {
             AddFilter(lookDevFilter.filterName, lookDevFilter);
         }
@@ -94,10 +101,12 @@ namespace LookDev.Editor
             if (lookDevFilter == null || string.IsNullOrEmpty(lookDevFilter.filterName))
                 return;
 
-            BinaryFormatter bf = new BinaryFormatter();
-
             string outputPath = Path.Combine(Path.GetFullPath(filterPath), $"{lookDevFilter.filterName}.dat");
             string outputRelPath = $"{filterPath}/{lookDevFilter.filterName}.dat";
+
+            string previousFilterPath = $"{filterPath}/{lookDevFilter.filterName}.dat";
+
+            BinaryFormatter bf = new BinaryFormatter();
 
             FileStream fileStream = File.Create(outputPath);
 
@@ -132,6 +141,22 @@ namespace LookDev.Editor
             fileStream.Close();
 
             return outFilter;
+        }
+
+        public static void RemovePreviousFilter(string filterName)
+        {
+            if (filterName == string.Empty)
+                return;
+
+            string outputPath = Path.Combine(Path.GetFullPath(filterPath), $"{filterName}.dat");
+            string outputRelPath = $"{filterPath}/{filterName}.dat";
+
+            if (File.Exists(outputPath))
+            {
+                AssetDatabase.DeleteAsset(outputRelPath);
+                filters.Remove(filterName);
+            }
+
         }
 
 
@@ -184,7 +209,8 @@ namespace LookDev.Editor
                 pathForLight = new List<string>() { "Assets/LookDev/Lights" },
                 pathForSkybox = new List<string>() { "Assets/LookDev/Setup/Skybox/UnityHDRI" },
                 pathForAnimation = new List<string>() { "Assets/LookDev/Animations" },
-                paths = new List<string>() { "Assets/LookDev" }
+                paths = new List<string>() { "Assets/LookDev" },
+                objectGuid = new List<string>()
             };
 
             SaveFilter(defaultFilter);
@@ -304,10 +330,24 @@ namespace LookDev.Editor
                             globalFilter.paths.Add(path);
                     }
 
+                    // Objects
+                    foreach (string obj in keyValuePair.Value.objectGuid)
+                    {
+                        if (obj == null)
+                            continue;
+
+                        if (globalFilter.objectGuid.Contains(obj) == false)
+                            globalFilter.objectGuid.Add(obj);
+                    }
+
                     globalFilter.showPrefab = globalFilter.showPrefab | keyValuePair.Value.showPrefab;
                     globalFilter.showModel = globalFilter.showModel | keyValuePair.Value.showModel;
                     globalFilter.showLightingPresetScene = globalFilter.showLightingPresetScene | keyValuePair.Value.showLightingPresetScene;
                     globalFilter.showLightingGroup = globalFilter.showLightingGroup | keyValuePair.Value.showLightingGroup;
+
+                }
+                else
+                {
 
                 }
             }
@@ -332,12 +372,302 @@ namespace LookDev.Editor
             SetAssetsFolders?.Invoke(gfilter.pathForSkybox.ToArray());
             */
 
+            // Apply folder
             SearchProviderForMaterials.folders = gfilter.paths;
             SearchProviderForTextures.folders = gfilter.paths;
             SearchProviderForModels.folders = gfilter.paths;
             SearchProviderForShader.folders = gfilter.paths;
             SearchProviderForLight.folders = gfilter.paths;
             SearchProviderForAnimation.folders = gfilter.paths;
+
+
+            List<string> modelGUIDs = new List<string>();
+            List<string> materialGUIDs = new List<string>();
+            List<string> textureGUIDs = new List<string>();
+            List<string> ShaderGUIDs = new List<string>();
+
+            // Apply object
+            for (int i=0;i<gfilter.objectGuid.Count;i++)
+            {
+                string currentGUID = gfilter.objectGuid[i];
+
+                if (string.IsNullOrEmpty(currentGUID))
+                    continue;
+
+                string assetPath = AssetDatabase.GUIDToAssetPath(currentGUID);
+                Object targetObj = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+
+                if (targetObj == null)
+                    continue;
+
+                Type currnetObjType = targetObj.GetType();
+                PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(targetObj);
+
+                if (currnetObjType == typeof(Texture) || currnetObjType == typeof(Texture2D))
+                {
+                    
+                    // Add Texture
+                    if (textureGUIDs.Contains(currentGUID) == false)
+                        textureGUIDs.Add(currentGUID);
+
+                    string textureAssetPath = AssetDatabase.GUIDToAssetPath(currentGUID);
+
+                    // Add Materials
+                    string[] allMatGUIDs = AssetDatabase.FindAssets("t:Material", new string[] { "Assets" });
+
+                    foreach(string matGUID in allMatGUIDs)
+                    {
+                        string matPath = AssetDatabase.GUIDToAssetPath(matGUID);
+
+                        string[] dependentAssets = AssetDatabase.GetDependencies(matPath);
+
+                        List<string> dependentAssetList = dependentAssets.ToList<string>();
+
+                        if (dependentAssetList.Contains(textureAssetPath))
+                        {
+                            if (materialGUIDs.Contains(matGUID) == false)
+                                materialGUIDs.Add(matGUID);
+                        }
+                    }
+
+                    // Add Models
+                    string[] allModelGUIDs = AssetDatabase.FindAssets("t:Model t:Prefab", new string[] { "Assets" });
+
+                    foreach(string modGUID in allModelGUIDs)
+                    {
+                        string modPath = AssetDatabase.GUIDToAssetPath(modGUID);
+
+                        string[] dependentAssets = AssetDatabase.GetDependencies(modPath);
+
+                        List<string> dependentAssetList = dependentAssets.ToList<string>();
+
+                        if (dependentAssetList.Contains(textureAssetPath))
+                        {
+                            if (modelGUIDs.Contains(modGUID) == false)
+                                modelGUIDs.Add(modGUID);
+                        }
+                    }
+
+                }
+                else if (currnetObjType == typeof(Material))
+                {
+                    string materialAssetPath = AssetDatabase.GUIDToAssetPath(currentGUID);
+
+                    // Add Material
+                    if (materialGUIDs.Contains(currentGUID) == false)
+                        materialGUIDs.Add(currentGUID);
+
+                    // Add Texture and Shader
+                    string[] dependentAssetsFromMat = AssetDatabase.GetDependencies(materialAssetPath);
+
+                    foreach(string dependentAsset in dependentAssetsFromMat)
+                    {
+                        Type curType = AssetDatabase.GetMainAssetTypeAtPath(dependentAsset);
+
+                        if (curType == typeof(Texture) || curType == typeof(Texture2D))
+                        {
+                            string assetGUID = AssetDatabase.AssetPathToGUID(dependentAsset);
+                            if (textureGUIDs.Contains(assetGUID) == false)
+                            {
+                                textureGUIDs.Add(assetGUID);
+                            }
+                        }
+                        else if (curType == typeof(Shader))
+                        {
+                            string assetGUID = AssetDatabase.AssetPathToGUID(dependentAsset);
+                            if (ShaderGUIDs.Contains(assetGUID) == false)
+                            {
+                                ShaderGUIDs.Add(assetGUID);
+                            }
+                        }
+                    }
+
+                    // Add Model
+                    string[] allModelGUIDs = AssetDatabase.FindAssets("t:Model t:Prefab", new string[] { "Assets" });
+
+                    foreach (string modGUID in allModelGUIDs)
+                    {
+                        string modPath = AssetDatabase.GUIDToAssetPath(modGUID);
+
+                        string[] dependentAssets = AssetDatabase.GetDependencies(modPath);
+
+                        List<string> dependentAssetList = dependentAssets.ToList<string>();
+
+                        if (dependentAssetList.Contains(materialAssetPath))
+                        {
+                            if (modelGUIDs.Contains(modGUID) == false)
+                                modelGUIDs.Add(modGUID);
+                        }
+                    }
+
+                }
+                else if (currnetObjType == typeof(SceneAsset))
+                {
+                    string sceneAssetPath = AssetDatabase.GUIDToAssetPath(currentGUID);
+
+                    string[] dependentAssets = AssetDatabase.GetDependencies(sceneAssetPath);
+
+                    foreach(string dependentAsset in dependentAssets)
+                    {
+                        Object obj = AssetDatabase.LoadMainAssetAtPath(dependentAsset);
+                        string objGUID = AssetDatabase.AssetPathToGUID(dependentAsset);
+
+                        if (obj.GetType() == typeof(Material))
+                        {
+                            if (materialGUIDs.Contains(objGUID) == false)
+                                materialGUIDs.Add(objGUID);
+                        }
+                        else if (obj.GetType() == typeof(Texture) || obj.GetType() == typeof(Texture2D))
+                        {
+                            if (textureGUIDs.Contains(objGUID) == false)
+                                textureGUIDs.Add(objGUID);
+                        }
+                        else if (obj.GetType() == typeof(Shader))
+                        {
+                            if (ShaderGUIDs.Contains(objGUID) == false)
+                                ShaderGUIDs.Add(objGUID);
+                        }
+                        else if (PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.MissingAsset && PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.NotAPrefab)
+                        {
+                            if (modelGUIDs.Contains(objGUID) == false)
+                                modelGUIDs.Add(objGUID);
+                        }
+                    }
+
+                }
+                else if (currnetObjType == typeof(Shader))
+                {
+                    string shaderAssetPath = AssetDatabase.GUIDToAssetPath(currentGUID);
+
+                    // Add Shader
+                    if (ShaderGUIDs.Contains(currentGUID) == false)
+                        ShaderGUIDs.Add(currentGUID);
+
+                    // Add Material
+                    string[] allMatGUIDs = AssetDatabase.FindAssets("t:Material", new string[] { "Assets" });
+
+                    foreach (string matGUID in allMatGUIDs)
+                    {
+                        string matPath = AssetDatabase.GUIDToAssetPath(matGUID);
+
+                        string[] dependentAssets = AssetDatabase.GetDependencies(matPath);
+
+                        List<string> dependentAssetList = dependentAssets.ToList<string>();
+
+                        if (dependentAssetList.Contains(shaderAssetPath))
+                        {
+                            if (materialGUIDs.Contains(matGUID) == false)
+                                materialGUIDs.Add(matGUID);
+
+                            // Add Texture
+                            foreach(string dependentAsset in dependentAssets)
+                            {
+                                Type assetType = AssetDatabase.GetMainAssetTypeAtPath(dependentAsset);
+                                string assetGuid = AssetDatabase.AssetPathToGUID(dependentAsset);
+
+                                if (assetType == typeof(Texture) || assetType == typeof(Texture2D))
+                                {
+                                    if (textureGUIDs.Contains(assetGuid) == false)
+                                        textureGUIDs.Add(assetGuid);
+                                }
+                            }
+
+                        }
+
+                    }
+
+                    // Add Model
+                    string[] allModelGUIDs = AssetDatabase.FindAssets("t:Model t:Prefab", new string[] { "Assets" });
+
+                    foreach (string modGUID in allModelGUIDs)
+                    {
+                        string modPath = AssetDatabase.GUIDToAssetPath(modGUID);
+
+                        string[] dependentAssets = AssetDatabase.GetDependencies(modPath);
+
+                        List<string> dependentAssetList = dependentAssets.ToList<string>();
+
+                        if (dependentAssetList.Contains(shaderAssetPath))
+                        {
+                            if (modelGUIDs.Contains(modGUID) == false)
+                                modelGUIDs.Add(modGUID);
+                        }
+                    }
+
+                }
+                else if (prefabAssetType != PrefabAssetType.NotAPrefab && prefabAssetType != PrefabAssetType.MissingAsset)
+                {
+                    // Add Model
+                    if (modelGUIDs.Contains(currentGUID) == false)
+                        modelGUIDs.Add(currentGUID);
+
+                    // Add Materials, Textures and Shaders
+                    Renderer[] rends = (targetObj as GameObject).GetComponentsInChildren<Renderer>();
+
+                    foreach(Renderer rend in rends)
+                    {
+
+                        foreach(Material mat in rend.sharedMaterials)
+                        {
+                            if (mat == null)
+                                continue;
+
+                            string matPath = AssetDatabase.GetAssetPath(mat);
+                            string matGUID = AssetDatabase.AssetPathToGUID(matPath);
+
+                            if (materialGUIDs.Contains(matGUID) == false)
+                                materialGUIDs.Add(matGUID);
+
+                            if (mat.shader != null)
+                            {
+                                string shaderPath = AssetDatabase.GetAssetPath(mat.shader);
+                                string shaderGUID = AssetDatabase.AssetPathToGUID(shaderPath);
+
+                                if (ShaderGUIDs.Contains(shaderGUID) == false)
+                                {
+                                    ShaderGUIDs.Add(shaderGUID);
+                                }
+                            }
+
+                            string[] texPropertyNames = mat.GetTexturePropertyNames();
+
+                            foreach(string propertyName in texPropertyNames)
+                            {
+                                Texture texLinked = mat.GetTexture(propertyName);
+
+                                if (texLinked != null)
+                                {
+                                    string texAssetPath = AssetDatabase.GetAssetPath(texLinked);
+
+                                    if (string.IsNullOrEmpty(texAssetPath) == false)
+                                    {
+                                        string texGUID = AssetDatabase.AssetPathToGUID(texAssetPath);
+                                        if (textureGUIDs.Contains(texGUID) == false)
+                                            textureGUIDs.Add(texGUID);
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+
+                    //Debug.LogWarning($"{targetObj} is Prefab");
+                }
+                else if (currnetObjType == typeof(GameObject))
+                {
+                    Debug.LogWarning($"{targetObj} is GameObject");
+                }
+                
+            }
+
+            // Apply all
+            SearchProviderForModels.objectsGUID = modelGUIDs;
+            SearchProviderForMaterials.objectsGUID = materialGUIDs;
+            SearchProviderForTextures.objectsGUID = textureGUIDs;
+            SearchProviderForShader.objectsGUID = ShaderGUIDs;
+
+
+
 
             SearchProviderForModels.showModel = gfilter.showModel;
             SearchProviderForModels.showPrefab = gfilter.showPrefab;
@@ -350,7 +680,7 @@ namespace LookDev.Editor
         }
 
 
-        void OnChangedFilters()
+        public void OnChangedFilters()
         {
             // Make Global-filter by enabled filters
             globalFilter = UpdateGlobalFilter();
@@ -360,7 +690,7 @@ namespace LookDev.Editor
         }
 
 
-        void OnRemoveAllFilters()
+        public void OnRemoveAllFilters()
         {
             List<string> keys = new List<string>(filters.Keys);
 
@@ -410,7 +740,11 @@ namespace LookDev.Editor
 
                     createNewFilterWindow.SetFilter(filters[(keys[i])]);
                     createNewFilterWindow.ResetWindowPosition();
-                    createNewFilterWindow.ShowModalUtility();
+
+                    createNewFilterWindow.SetPreviousFilterName(createNewFilterWindow.GetFilter().filterName);
+
+                    //createNewFilterWindow.ShowModalUtility();
+                    createNewFilterWindow.ShowAuxWindow();
 
                     OnChangedFilters();
                     GUIUtility.ExitGUI();
@@ -436,7 +770,14 @@ namespace LookDev.Editor
             {
                 createNewFilterWindow = EditorWindow.GetWindow<CreateNewFilterWindow>("Create New Filter", true);
                 createNewFilterWindow.ResetWindowPosition();
-                createNewFilterWindow.ShowModalUtility();
+
+                createNewFilterWindow.GetFilter().showModel = true;
+                createNewFilterWindow.GetFilter().showPrefab = true;
+                createNewFilterWindow.GetFilter().showLightingGroup = true;
+                createNewFilterWindow.GetFilter().showLightingPresetScene = true;
+
+                //createNewFilterWindow.ShowModalUtility();
+                createNewFilterWindow.ShowAuxWindow();
 
                 GUIUtility.ExitGUI();
             }
@@ -444,5 +785,8 @@ namespace LookDev.Editor
             GUILayout.EndVertical();
 
         }
+
+
+
     }
 }

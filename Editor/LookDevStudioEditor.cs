@@ -441,6 +441,5 @@ namespace LookDev.Editor
             MakePrefabByUserInput();
 
         }
-
     }
 }

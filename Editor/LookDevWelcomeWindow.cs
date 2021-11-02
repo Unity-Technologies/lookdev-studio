@@ -21,7 +21,7 @@ namespace LookDev.Editor
 
         const string urlTemplate =
             "https://github.com/Unity-Technologies/lookdev-studio/releases/download/v{0}/Extension-{1}.unitypackage";
-        
+
         const string LDS_PACKAGE_NAME = "com.unity.lookdevstudio";
 
         const string PackageTempDirectory = "Temp";
@@ -86,6 +86,20 @@ namespace LookDev.Editor
             return true;
         }
 
+        [MenuItem("LookDev Studio DEBUG/Developer Mode")]
+        public static void ToggleDeveloperMode()
+        {
+            LookDevPreferences.instance.EnableDeveloperMode = !LookDevPreferences.instance.EnableDeveloperMode;
+        }
+
+        [MenuItem("LookDev Studio DEBUG/Developer Mode", true)]
+        public static bool ValidateDeveloperMode()
+        {
+            var developerModeEnabled = LookDevPreferences.instance.EnableDeveloperMode;
+            Menu.SetChecked("LookDev Studio DEBUG/Developer Mode", developerModeEnabled);
+            return true;
+        }
+
         [MenuItem("LookDev Studio DEBUG/Create Asset Package")]
         public static void CreateAssetPackage()
         {
@@ -129,7 +143,7 @@ namespace LookDev.Editor
 
             lastQueriedPackageList = listRequest.Result;
         }
-        
+
         static async Task InstallPackage(string address)
         {
             await QueryPackageList();
@@ -159,14 +173,15 @@ namespace LookDev.Editor
 
                 if (sourceFolderPath == string.Empty)
                     return;
-                
+
                 string selectedFolderName = new DirectoryInfo(sourceFolderPath).Name;
                 if (selectedFolderName != expectedSourceFolderName)
                 {
-                    Debug.LogError($"Error: Wrong folder selected. Expecting a folder called {expectedSourceFolderName}");
+                    Debug.LogError(
+                        $"Error: Wrong folder selected. Expecting a folder called {expectedSourceFolderName}");
                     return;
                 }
-                
+
                 SymlinkUtility.Symlink(SymlinkUtility.SymlinkType.Junction, sourceFolderPath, "Assets", "LookDev");
                 LookDevPreferences.instance.AreAssetsInstalled = true;
                 window.SetupButton.SetEnabled(LookDevPreferences.instance.AreAssetsInstalled);
@@ -174,9 +189,9 @@ namespace LookDev.Editor
             }
 
             var lookDevPkgNfo = lastQueriedPackageList.First(x => x.name == LDS_PACKAGE_NAME);
-            
+
             string downloadUrl = string.Format(urlTemplate, lookDevPkgNfo.version, expectedSourceFolderName);
-            
+
             using (var uwr = new UnityWebRequest(downloadUrl, UnityWebRequest.kHttpVerbGET))
             {
                 EditorApplication.LockReloadAssemblies();
@@ -211,7 +226,6 @@ namespace LookDev.Editor
                     catch
                     {
                         Debug.LogError("Failed to import package");
-
                     }
                     finally
                     {
@@ -224,7 +238,6 @@ namespace LookDev.Editor
                     Debug.LogError($"Download stopped with error: {uwr.downloadHandler.error}");
                 }
             }
-            
         }
 
         static void Setup(LookDevWelcomeWindow window)

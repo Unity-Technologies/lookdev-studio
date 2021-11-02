@@ -2,14 +2,11 @@
     <Style src="project://database/Packages/com.unity.lookdevstudio/UI/LookDevStudioToolbar.uss?fileID=7433441132597879392&amp;guid=82ebf71904b939845b676ff14c7a8355&amp;type=3#LookDevStudioToolbar" />
     <ui:VisualElement name="ToolbarRoot" class="toolbarRoot" style="flex-direction: row; height: 35px;">
         <ui:VisualElement style="flex-direction: row; justify-content: space-between; flex-grow: 1; flex-shrink: 0; align-items: center;">
-            <ui:VisualElement name="ToolbarButtonGroup" style="flex-direction: row; justify-content: flex-start;">
-                <ui:Button text="T1" display-tooltip-when-elided="true" class="toolbarButton" />
-                <ui:Button text="T2" display-tooltip-when-elided="true" class="toolbarButton" />
-                <ui:Button text="T3" display-tooltip-when-elided="true" class="toolbarButton" />
-                <ui:Button text="T4" display-tooltip-when-elided="true" class="toolbarButton" />
-                <ui:Button text="T5" display-tooltip-when-elided="true" class="toolbarButton" />
-                <ui:Button text="T6" display-tooltip-when-elided="true" class="toolbarButton" />
+            <ui:VisualElement name="ToolbarButtonGroup" style="flex-direction: row;">
+                <ui:VisualElement name="DebugViewDropdownContainer" style="min-width: 300px;" />
             </ui:VisualElement>
+            <ui:VisualElement name="MiddleButtonGroup" style="flex-direction: row;" />
+            <ui:Button name="ScreenshotButton" class="screenshotButton" style="background-image: resource(&apos;Icon_CameraRender&apos;); -unity-background-scale-mode: scale-to-fit; visibility: visible;" />
             <ui:VisualElement name="CameraButtonGroup" style="justify-content: center; flex-direction: row; align-items: center;">
                 <ui:Button display-tooltip-when-elided="true" name="cameraButton0" class="cameraButton selectedCameraButton">
                     <ui:Label text="1" display-tooltip-when-elided="true" class="cameraButtonLabel" />
@@ -29,7 +26,6 @@
                 <ui:Button text="Save Cam" display-tooltip-when-elided="true" name="saveCameraButton" style="margin-left: 10px;" />
                 <ui:Label text="Auto Save Cam" display-tooltip-when-elided="true" name="autoSaveCameraToggleLabel" style="width: 110px; -unity-text-align: upper-right;" />
                 <ui:Toggle name="autoSaveCameraToggle" />
-                <ui:Button display-tooltip-when-elided="true" name="ScreenshotButton" class="screenshotButton" style="background-image: resource(&apos;EditorIcons/ScreenshotIcon&apos;); -unity-background-scale-mode: scale-to-fit; visibility: hidden;" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

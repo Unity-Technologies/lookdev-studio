@@ -31,3 +31,9 @@
     width: 50%;
     height: 50%;
 }
+
+.screenshotButton {
+    visibility: hidden;
+    width: 60px;
+    height: 28px;
+}

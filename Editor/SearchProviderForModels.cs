@@ -12,6 +12,8 @@ namespace LookDev.Editor
         internal static string name = "Model";
 
         public static List<string> folders = new List<string>();
+        public static List<string> objectsGUID = new List<string>();
+
         public static string defaultFolder = "Assets/LookDev/Models";
 
         public static bool showModel;
@@ -39,18 +41,37 @@ namespace LookDev.Editor
                         filter = filter + "t:Prefab ";
 
                     string[] results;
+                    List<string> resultList = new List<string>();
 
-                    if (folders.Count == 0)
+                    if (folders.Count == 0 && objectsGUID.Count == 0)
+                    {
                         results = AssetDatabase.FindAssets("t:Model t:Prefab " + context.searchQuery, new string[] { defaultFolder });
+                        resultList = results.ToList<string>();
+                    }
                     else
                     {
                         if (filter == string.Empty)
                             return null;
 
-                        results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, folders.ToArray());
+                        if (folders.Count != 0)
+                        {
+                            results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, folders.ToArray());
+                            resultList = results.ToList<string>();
+                        }
+
+                        if (objectsGUID.Count != 0)
+                        {
+                            for (int i = 0; i < objectsGUID.Count; i++)
+                            {
+                                if (resultList.Contains(objectsGUID[i]) == false)
+                                    resultList.Add(objectsGUID[i]);
+                            }
+
+                            //results = resultList.ToArray();
+                        }
                     }
 
-                    foreach (var guid in results)
+                    foreach (var guid in resultList)
                     {
                         string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                         var firstRenderer = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath).GetComponentInChildren<Renderer>();
@@ -206,6 +227,31 @@ namespace LookDev.Editor
                 handler = (item) =>
                 {
                     AssetManageHelpers.DeleteSelectedAssets();
+                }
+            },
+            new SearchAction(id, "Show related Assets", null, "Description")
+            {
+                handler = (item) =>
+                {
+                    LookDevSearchFilters lookDevSearchFilters = EditorWindow.GetWindow<LookDevSearchFilters>();
+
+                    if (lookDevSearchFilters != null)
+                    {
+                        LookDevFilter instantFilter = new LookDevFilter();
+                        instantFilter.enabled = true;
+                        instantFilter.filterName = $"FROM_MODEL ({System.IO.Path.GetFileNameWithoutExtension(item.id)})";
+                        instantFilter.objectGuid.Add(AssetDatabase.AssetPathToGUID(item.id));
+                        instantFilter.showModel = true;
+                        instantFilter.showPrefab = true;
+
+                        lookDevSearchFilters.OnRemoveAllFilters();
+                        
+                        LookDevSearchFilters.SaveFilter(instantFilter);
+                        //LookDevSearchFilters.AddFilter(instantFilter);
+                        
+                        LookDevSearchFilters.RefreshFilters();
+                        lookDevSearchFilters.OnChangedFilters();
+                    }
                 }
             },
         };

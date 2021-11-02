@@ -118,15 +118,10 @@ lookdevstudio = {
                     name = "Return to Unity"
                     command_id = "Commands/Return to Unity"
                 }
-                {
-                    name = "Cycle Material Debug Mode"
-                }
-                {
-                    name = "Reset Material Debug Mode"
-                }
-                {
-                    name = "Import Unity Package"
-                }
+                { name = "Cycle Debug View Mode" }
+                { name = "Cycle Material Channel Mode" }
+                { name = "Reset Material Debug Mode" }
+                { name = "Import Unity Package" }
             ]
         }
 		{

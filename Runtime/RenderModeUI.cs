@@ -65,19 +65,42 @@ public class RenderModeUI : MonoBehaviour
 
     static IEnumerator TakeScreenshot(UIDocument uiDocument)
     {
+#if UNITY_EDITOR
         var fullPath = $"{Directory.GetCurrentDirectory()}/{ScreencaptureFolder}";
         if (!Directory.Exists(fullPath))
         {
             Directory.CreateDirectory(fullPath);
         }
+#else
+        var fullPath = $"{Application.persistentDataPath}/{ScreencaptureFolder}";
+        if (!Directory.Exists(fullPath))
+        {
+            Directory.CreateDirectory(fullPath);
+        }
+#endif
 
         uiDocument.rootVisualElement.visible = false;
+        var screenshotButton = uiDocument.rootVisualElement.Q<Button>("ScreenshotButton");
+        if (screenshotButton != null)
+        {
+            screenshotButton.visible = false;
+        }
+
+
         yield return null;
         var screenshotName =
             $"Screenshot_{DateTime.Now.Day}{DateTime.Now.Month}{DateTime.Now.Year}{DateTime.Now.Hour}{DateTime.Now.Minute}{DateTime.Now.Second}.png";
+#if UNITY_EDITOR
         ScreenCapture.CaptureScreenshot($"{ScreencaptureFolder}/{screenshotName}", 2);
+#else
+        ScreenCapture.CaptureScreenshot($"{fullPath}/{screenshotName}", 2);
+#endif
         Debug.Log($"Screenshot Captured: {fullPath}/{screenshotName}");
         yield return null;
         uiDocument.rootVisualElement.visible = true;
+        if (screenshotButton != null)
+        {
+            screenshotButton.visible = true;
+        }
     }
 }

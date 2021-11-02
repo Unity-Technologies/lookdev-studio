@@ -1,4 +1,7 @@
+using System;
+using System.IO;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace LookDev.Editor
@@ -7,16 +10,19 @@ namespace LookDev.Editor
     {
         bool _savePosition;
 
+        Button _screenshotButton;
         Button _saveCameraButton;
         Toggle _autoSaveCameraToggle;
+
+        public static TemplateContainer ToolbarContainer;
 
         void CreateGUI()
         {
             var uxmlTemplate =
                 AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
                     $"Packages/com.unity.lookdevstudio/UI/LookDevStudioToolbar.uxml");
-            var ui = uxmlTemplate.CloneTree();
-            rootVisualElement.Add(ui);
+            ToolbarContainer = uxmlTemplate.CloneTree();
+            rootVisualElement.Add(ToolbarContainer);
 
             for (int i = 0; i < LookDevCamera.NUM_CAMERA_INDICES; ++i)
             {
@@ -24,6 +30,23 @@ namespace LookDev.Editor
                 var index = i;
                 cameraButton.clicked += () => { LookDevShortcutsOverlay.LoadCameraPosition(index); };
             }
+
+            _screenshotButton = rootVisualElement.Q<Button>("ScreenshotButton");
+            _screenshotButton.clicked += () =>
+            {
+                LookDevHelpers.GetGameview();
+                var fullPath = $"{Directory.GetCurrentDirectory()}/{LookDevPreferences.ScreencaptureFolder}";
+                if (!Directory.Exists(fullPath))
+                {
+                    Directory.CreateDirectory(fullPath);
+                }
+
+                var screenshotName =
+                    $"Screenshot_{DateTime.Now.Day}{DateTime.Now.Month}{DateTime.Now.Year}{DateTime.Now.Hour}{DateTime.Now.Minute}{DateTime.Now.Second}.png";
+                ScreenCapture.CaptureScreenshot($"{LookDevPreferences.ScreencaptureFolder}/{screenshotName}", 2);
+                Debug.Log($"Screenshot Captured: {fullPath}/{screenshotName}");
+            };
+
 
             _saveCameraButton = rootVisualElement.Q<Button>("saveCameraButton");
             _saveCameraButton.clicked += () => { LookDevShortcutsOverlay.SaveCameraPosition(); };

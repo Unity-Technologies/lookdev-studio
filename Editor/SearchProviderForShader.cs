@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
-
+using System.Linq;
 
 namespace LookDev.Editor
 {
@@ -12,6 +12,8 @@ namespace LookDev.Editor
         internal static string name = "Shader";
 
         public static List<string> folders = new List<string>();
+        public static List<string> objectsGUID = new List<string>();
+
         public static string defaultFolder = "Assets/LookDev/Shaders";
 
 
@@ -30,13 +32,32 @@ namespace LookDev.Editor
                         defaultFolder = projectPath;
 
                     string[] results;
+                    List<string> resultList = new List<string>();
 
-                    if (folders.Count == 0)
-                        results = AssetDatabase.FindAssets("t:Shader " + context.searchQuery, new string[]{ defaultFolder });
+                    if (folders.Count == 0 && objectsGUID.Count == 0)
+                    {
+                        results = AssetDatabase.FindAssets("t:Shader " + context.searchQuery, new string[] { defaultFolder });
+                        resultList = results.ToList<string>();
+                    }
                     else
-                        results = AssetDatabase.FindAssets("t:Shader " + context.searchQuery, folders.ToArray());
+                    {
+                        if (folders.Count != 0)
+                        {
+                            results = AssetDatabase.FindAssets("t:Shader " + context.searchQuery, folders.ToArray());
+                            resultList = results.ToList<string>();
+                        }
 
-                    foreach (var guid in results)
+                        if (objectsGUID.Count != 0)
+                        {
+                            for (int i = 0; i < objectsGUID.Count; i++)
+                            {
+                                if (resultList.Contains(objectsGUID[i]) == false)
+                                    resultList.Add(objectsGUID[i]);
+                            }
+                        }
+                    }
+
+                    foreach (var guid in resultList)
                     {
                         items.Add(provider.CreateItem(context, AssetDatabase.GUIDToAssetPath(guid), null, null, null, null));
                     }
@@ -129,6 +150,30 @@ namespace LookDev.Editor
                 handler = (item) =>
                 {
                     AssetManageHelpers.DeleteSelectedAssets();
+                }
+            },
+            new SearchAction(id, "Show related Assets", null, "Description")
+            {
+                handler = (item) =>
+                {
+                    LookDevSearchFilters lookDevSearchFilters = EditorWindow.GetWindow<LookDevSearchFilters>();
+
+                    if (lookDevSearchFilters != null)
+                    {
+                        LookDevFilter instantFilter = new LookDevFilter();
+                        instantFilter.enabled = true;
+                        instantFilter.filterName = $"FROM_SHADER ({System.IO.Path.GetFileNameWithoutExtension(item.id)})";
+                        instantFilter.objectGuid.Add(AssetDatabase.AssetPathToGUID(item.id));
+                        instantFilter.showModel = true;
+                        instantFilter.showPrefab = true;
+
+                        lookDevSearchFilters.OnRemoveAllFilters();
+
+                        LookDevSearchFilters.SaveFilter(instantFilter);
+
+                        LookDevSearchFilters.RefreshFilters();
+                        lookDevSearchFilters.OnChangedFilters();
+                    }
                 }
             }
         };

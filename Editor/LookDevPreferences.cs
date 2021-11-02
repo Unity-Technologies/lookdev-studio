@@ -19,6 +19,8 @@ namespace LookDev.Editor
         static string[] _lookDevSessionGuids;
         static GUIStyle _lockedLabelStyle;
         static Texture2D _lockedIcon;
+        
+        public const string ScreencaptureFolder = "Screenshots";
 
         public static GUIStyle LockedLabelStyle
         {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -21,9 +20,7 @@ namespace LookDev.Editor
 
         static readonly List<LoadExtensionDelegate> _extensions = new List<LoadExtensionDelegate>();
 
-        public delegate bool LoadExtensionDelegate(VisualElement overlayRoot);
-
-        const string ScreencaptureFolder = "Screenshots";
+        public delegate bool LoadExtensionDelegate(VisualElement overlayRoot, VisualElement toolbarRoot);
 
         public static event Action<int> OnCameraPositionLoaded;
 
@@ -136,6 +133,7 @@ namespace LookDev.Editor
 
                 var turntableToggle = new Toggle("Turntable");
                 turntableToggle.SetValueWithoutNotify(_lookDevPreferences.EnableTurntable);
+                turntableToggle.style.marginBottom = 8;
 
                 var orbitToggle = new Toggle("Orbit Camera");
                 orbitToggle.SetValueWithoutNotify(_lookDevPreferences.EnableOrbit);
@@ -184,6 +182,7 @@ namespace LookDev.Editor
                 }
 
                 var snapGroundToObject = new Toggle("Snap Ground To Object");
+                snapGroundToObject.style.marginBottom = 8;
                 if (foundGroundPlane)
                 {
                     groundPlaneToggle.RegisterValueChangedCallback(evt =>
@@ -222,6 +221,7 @@ namespace LookDev.Editor
                         highValue = 360,
                         value = lightRig.StartingSkyRotation
                     };
+                    _rotationSlider.style.paddingBottom = 8;
                     _rotationSlider.RegisterValueChangedCallback(evt =>
                     {
                         var lightRig = GameObject.FindObjectOfType<ILightRig>();
@@ -234,28 +234,6 @@ namespace LookDev.Editor
                 {
                     Debug.LogError("Lighting Rig not found");
                 }
-
-                var screenshotButton = new Button(() =>
-                {
-                    LookDevHelpers.GetGameview();
-                    var fullPath = $"{Directory.GetCurrentDirectory()}/{ScreencaptureFolder}";
-                    if (!Directory.Exists(fullPath))
-                    {
-                        Directory.CreateDirectory(fullPath);
-                    }
-
-                    var screenshotName =
-                        $"Screenshot_{DateTime.Now.Day}{DateTime.Now.Month}{DateTime.Now.Year}{DateTime.Now.Hour}{DateTime.Now.Minute}{DateTime.Now.Second}.png";
-                    ScreenCapture.CaptureScreenshot($"{ScreencaptureFolder}/{screenshotName}", 2);
-                    Debug.Log($"Screenshot Captured: {fullPath}/{screenshotName}");
-                });
-                var screenshotIcon = Resources.Load<Texture2D>("EditorIcons/ScreenshotIcon");
-                screenshotButton.style.backgroundImage = new StyleBackground(screenshotIcon);
-                screenshotButton.style.width = 40;
-                screenshotButton.style.height = 40;
-                screenshotButton.style.maxWidth = 40;
-                screenshotButton.style.maxHeight = 40;
-                _sceneOverlayRoot.Add(screenshotButton);
 
                 _sceneHelpUiRoot = new VisualElement();
                 var helpUiOne = Resources.Load<Texture2D>("LookdevHelp");
@@ -320,7 +298,7 @@ namespace LookDev.Editor
 
                 foreach (var extension in _extensions)
                 {
-                    if (!extension.Invoke(_sceneOverlayRoot))
+                    if (!extension.Invoke(_sceneOverlayRoot, ToolbarWindow.ToolbarContainer))
                     {
                         Debug.LogError($"Failed to load extension: {extension.Method.Name}");
                     }

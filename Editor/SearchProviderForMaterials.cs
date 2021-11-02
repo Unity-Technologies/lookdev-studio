@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
 using System.IO;
+using System.Linq;
 
 namespace LookDev.Editor
 {
@@ -11,23 +12,46 @@ namespace LookDev.Editor
         internal static string id = "LookDev_Material";
         internal static string name = "Material";
 
-
         public static List<string> folders = new List<string>();
+        public static List<string> objectsGUID = new List<string>();
+
         public static string defaultFolder = "Assets/LookDev/Materials";
 
 
         public static string[] GetAllMaterialPaths()
         {
             string[] guids;
-            
-            if (folders.Count == 0)
+            List<string> resultList = new List<string>();
+
+            if (folders.Count == 0 && objectsGUID.Count == 0)
+            {
                 guids = AssetDatabase.FindAssets("t:Material", new string[] { defaultFolder });
+                resultList = guids.ToList<string>();
+            }
             else
-                guids = AssetDatabase.FindAssets("t:Material", folders.ToArray());
+            {
+                if (folders.Count != 0)
+                {
+                    guids = AssetDatabase.FindAssets("t:Material", folders.ToArray());
+                    resultList = guids.ToList<string>();
+                }
+
+                if (objectsGUID.Count != 0)
+                {
+                    for (int i = 0; i < objectsGUID.Count; i++)
+                    {
+                        if (resultList.Contains(objectsGUID[i]) == false)
+                            resultList.Add(objectsGUID[i]);
+                    }
+
+                    //guids = resultList.ToArray();
+                }
+
+            }
 
             List<string> allMaterials = new List<string>();
 
-            foreach (var guid in guids)
+            foreach (var guid in resultList)
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                 if (Path.GetExtension(assetPath).ToLower() == ".mat")
@@ -53,13 +77,35 @@ namespace LookDev.Editor
                         defaultFolder = projectPath;
 
                     string[] results;
+                    List<string> resultList = new List<string>();
 
-                    if (folders.Count == 0)
+                    if (folders.Count == 0 && objectsGUID.Count == 0)
+                    {
                         results = AssetDatabase.FindAssets("t:Material " + context.searchQuery, new string[] { defaultFolder });
+                        resultList = results.ToList<string>();
+                    }
                     else
-                        results = AssetDatabase.FindAssets("t:Material " + context.searchQuery, folders.ToArray());
+                    {
+                        if (folders.Count != 0)
+                        {
+                            results = AssetDatabase.FindAssets("t:Material " + context.searchQuery, folders.ToArray());
+                            resultList = results.ToList<string>();
+                        }
 
-                    foreach (string guid in results)
+                        if (objectsGUID.Count != 0)
+                        {
+                            for (int i = 0; i < objectsGUID.Count; i++)
+                            {
+                                if (resultList.Contains(objectsGUID[i]) == false)
+                                    resultList.Add(objectsGUID[i]);
+                            }
+
+                            //results = resultList.ToArray();
+                        }
+
+                    }
+
+                    foreach (string guid in resultList)
                     {
                         string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                         if (Path.GetExtension(assetPath).ToLower() == ".mat")
@@ -173,8 +219,31 @@ namespace LookDev.Editor
                 {
                     AssetManageHelpers.DeleteSelectedAssets();
                 }
-            }
+            },
+            new SearchAction(id, "Show related Assets", null, "Description")
+            {
+                handler = (item) =>
+                {
+                    LookDevSearchFilters lookDevSearchFilters = EditorWindow.GetWindow<LookDevSearchFilters>();
 
+                    if (lookDevSearchFilters != null)
+                    {
+                        LookDevFilter instantFilter = new LookDevFilter();
+                        instantFilter.enabled = true;
+                        instantFilter.filterName = $"FROM_MATERIAL ({System.IO.Path.GetFileNameWithoutExtension(item.id)})";
+                        instantFilter.objectGuid.Add(AssetDatabase.AssetPathToGUID(item.id));
+                        instantFilter.showModel = true;
+                        instantFilter.showPrefab = true;
+
+                        lookDevSearchFilters.OnRemoveAllFilters();
+
+                        LookDevSearchFilters.SaveFilter(instantFilter);
+
+                        LookDevSearchFilters.RefreshFilters();
+                        lookDevSearchFilters.OnChangedFilters();
+                    }
+                }
+            }
         };
         }
 

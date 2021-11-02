@@ -292,45 +292,78 @@ namespace LookDev.Editor
         void OnPostprocessModel(GameObject g)
         {
             var meshFilters = g.GetComponentsInChildren<MeshFilter>();
+            List<GameObject> collisionGameObjects = new List<GameObject>();
+
             foreach (var meshFilter in meshFilters)
             {
-                if (meshFilter.sharedMesh.name.ToLower().EndsWith("col"))
+                if (MeshFilterHasPostFix(meshFilter, "_col"))
                 {
-                    meshFilter.gameObject.AddComponent<MeshCollider>();
+                    var meshCollider = CreateCollider<MeshCollider>(meshFilter);
+                    meshCollider.convex = false;
 
-                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
-                    GameObject.DestroyImmediate(meshRenderer);
+                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
+                    {
+                        collisionGameObjects.Add(meshFilter.gameObject);
+                    }
                 }
-                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("colx"))
+                else if (MeshFilterHasPostFix(meshFilter, "_colx"))
                 {
-                    var meshCollider = meshFilter.gameObject.AddComponent<MeshCollider>();
+                    var meshCollider = CreateCollider<MeshCollider>(meshFilter);
                     meshCollider.convex = true;
 
-                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
-                    GameObject.DestroyImmediate(meshRenderer);
+                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
+                    {
+                        collisionGameObjects.Add(meshFilter.gameObject);
+                    }
                 }
-                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("colb"))
+                else if (MeshFilterHasPostFix(meshFilter, "_colb"))
                 {
-                    meshFilter.gameObject.AddComponent<BoxCollider>();
+                    CreateCollider<BoxCollider>(meshFilter);
 
-                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
-                    GameObject.DestroyImmediate(meshRenderer);
+                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
+                    {
+                        collisionGameObjects.Add(meshFilter.gameObject);
+                    }
                 }
-                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("cols"))
+                else if (MeshFilterHasPostFix(meshFilter, "_cols"))
                 {
-                    meshFilter.gameObject.AddComponent<SphereCollider>();
+                    CreateCollider<SphereCollider>(meshFilter);
 
-                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
-                    GameObject.DestroyImmediate(meshRenderer);
+                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
+                    {
+                        collisionGameObjects.Add(meshFilter.gameObject);
+                    }
                 }
-                else if (meshFilter.sharedMesh.name.ToLower().EndsWith("colcap"))
+                else if (MeshFilterHasPostFix(meshFilter, "_colcap"))
                 {
-                    meshFilter.gameObject.AddComponent<CapsuleCollider>();
+                    CreateCollider<CapsuleCollider>(meshFilter);
 
-                    var meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
-                    GameObject.DestroyImmediate(meshRenderer);
+                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
+                    {
+                        collisionGameObjects.Add(meshFilter.gameObject);
+                    }
                 }
             }
+
+            for (int i = collisionGameObjects.Count - 1; i >= 0; --i)
+            {
+                GameObject.DestroyImmediate(collisionGameObjects[i]);
+            }
+        }
+
+        bool MeshFilterHasPostFix(MeshFilter meshFilter, string postfix)
+        {
+            return meshFilter.sharedMesh.name.ToLower().EndsWith(postfix) ||
+                   meshFilter.gameObject.name.ToLower().EndsWith(postfix);
+        }
+
+        T CreateCollider<T>(MeshFilter collisionMeshFilter) where T : Collider
+        {
+            T originalCollider = collisionMeshFilter.gameObject.AddComponent<T>();
+            var collider = collisionMeshFilter.transform.parent.gameObject.AddComponent<T>();
+
+            EditorUtility.CopySerialized(originalCollider, collider);
+            return collider;
         }
     }
 }

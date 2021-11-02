@@ -9,19 +9,30 @@ namespace LookDev.Editor
 {
     public class CreateNewFilterWindow : EditorWindow
     {
+        string previousFilterName = string.Empty;
+
         LookDevFilter newFilter = new LookDevFilter();
 
         Vector2 scrollVector;
 
+        
+        public void SetPreviousFilterName(string inputPath)
+        {
+            previousFilterName = inputPath;
+        }
+        
 
         public void SetFilter(LookDevFilter inputFilter)
         {
             if (inputFilter != null)
             {
                 newFilter = inputFilter;
-
-                Debug.Log(inputFilter.filterName);
             }
+        }
+
+        public LookDevFilter GetFilter()
+        {
+            return newFilter;
         }
 
 
@@ -42,6 +53,9 @@ namespace LookDev.Editor
                 LookDevSearchFilters.SaveFilter(newFilter);
                 LookDevSearchFilters.RefreshFilters();
             }
+
+            previousFilterName = string.Empty;
+
         }
 
 
@@ -92,6 +106,47 @@ namespace LookDev.Editor
         }
 
 
+        void ShowFilterByObjectInfo(string filterItemName, ref List<string> objGuidList)
+        {
+            GUILayout.BeginVertical("Box");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{filterItemName} :", EditorStyles.boldLabel, GUILayout.Width(75));
+            if (GUILayout.Button(new GUIContent("+", "Add Object"), GUILayout.Width(20)))
+            {
+                if (objGuidList != null)
+                    objGuidList.Add(string.Empty);
+                else
+                    Debug.LogError($"The filter's Object List in null");
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            for (int i = 0; i < objGuidList.Count; i++)
+            {
+                GUILayout.BeginHorizontal("Box");
+                GUILayout.FlexibleSpace();
+
+                string assetPath = AssetDatabase.GUIDToAssetPath(objGuidList[i]);
+                Object obj = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+
+                EditorGUI.BeginChangeCheck();
+                obj = EditorGUILayout.ObjectField(obj, typeof(Object), true, GUILayout.Width(340));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    string curAssetPath = AssetDatabase.GetAssetPath(obj);
+                    objGuidList[i] = AssetDatabase.AssetPathToGUID(curAssetPath);
+                }
+
+                if (GUILayout.Button(new GUIContent("X", "Remove Object"), GUILayout.Width(20)))
+                {
+                    objGuidList.RemoveAt(i);
+                }
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.EndVertical();
+        }
+
+
         private void OnGUI()
         {
             scrollVector = GUILayout.BeginScrollView(scrollVector, GUILayout.Width(minSize.x), GUILayout.Height(minSize.y));
@@ -109,6 +164,9 @@ namespace LookDev.Editor
             EditorGUILayout.Space();
 
             ShowFilterInfo("Paths", ref newFilter.paths);
+
+            ShowFilterByObjectInfo("Objects", ref newFilter.objectGuid);
+
             /*
             ShowFilterInfo("Materials", ref newFilter.pathForMaterial);
             ShowFilterInfo("Textures", ref newFilter.pathForTexture);
@@ -137,7 +195,10 @@ namespace LookDev.Editor
             if (GUILayout.Button("Save Filter"))
             {
                 LookDevSearchFilters.SaveFilter(newFilter);
+                LookDevSearchFilters.RemovePreviousFilter(previousFilterName);
                 LookDevSearchFilters.RefreshFilters();
+
+                previousFilterName = string.Empty;
                 Close();
             }
 

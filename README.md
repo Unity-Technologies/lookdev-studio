@@ -3,7 +3,7 @@ How to download/install
 ---------
 
 Please download the latest release as a ZIP file under “Releases”.
-Please make sure you have the required Unity version (2021.2.0b3 or higher).
+Please make sure you have the required Unity version (2021.2.0f1 or higher).
 
 Survey notice
 
