@@ -20,12 +20,12 @@ License Type: CC0
 
 Copyright © Poly Haven
 
-https://polyhaven.com/a/studio_small_03
-https://polyhaven.com/a/shanghai_bund
-https://polyhaven.com/a/the_sky_is_on_fire
-https://polyhaven.com/a/circus_arena
-https://polyhaven.com/a/hikers_cave
-https://polyhaven.com/a/cave_wall 
+https://polyhaven.com/a/studio_small_03  
+https://polyhaven.com/a/shanghai_bund  
+https://polyhaven.com/a/the_sky_is_on_fire  
+https://polyhaven.com/a/circus_arena  
+https://polyhaven.com/a/hikers_cave  
+https://polyhaven.com/a/cave_wall  
 
 https://polyhaven.com/license
 
@@ -95,12 +95,12 @@ License Type: Apache License 2.0
 
 Copyright © 2020 Unity Technologies ApS
 
-https://github.com/UnityTechnologies/open-project-1 
-https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Items/WalkingCane 
-https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Characters/PhoenixChick 
-https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Characters/PigChef 
-https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Items/Lantern 
-https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Items/Pouch 
-https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Shaders 
+https://github.com/UnityTechnologies/open-project-1  
+https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Items/WalkingCane  
+https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Characters/PhoenixChick  
+https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Characters/PigChef  
+https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Items/Lantern  
+https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Art/Items/Pouch  
+https://github.com/UnityTechnologies/open-project-1/tree/main/UOP1_Project/Assets/Shaders  
 
 https://github.com/UnityTechnologies/open-project-1/blob/main/LICENSE
