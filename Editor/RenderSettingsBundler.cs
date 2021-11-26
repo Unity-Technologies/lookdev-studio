@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using UnityEditor;
-using UnityEditor.Graphs;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -21,7 +17,7 @@ namespace LookDev.Editor
             Push,
             Pull
         }
-        
+#if !DISABLE_LOOKDEV_WELCOME_WINDOW
         [MenuItem("LookDev Studio/Create RenderSettings Configuration")]
         public static void CreateBundle()
         {
@@ -34,6 +30,18 @@ namespace LookDev.Editor
         {
             //LoadRenderSettingsPackage();
         }
+
+        [MenuItem("LookDev Studio/Sync/Push Configuration")]
+        static void Push()
+        {
+            Synchronize(SyncMode.Push);
+        }
+        [MenuItem("LookDev Studio/Sync/Pull Configuration")]
+        static void Pull()
+        {
+            Synchronize(SyncMode.Pull);
+        }
+#endif    
 
         static void CreateRenderSettingsBundle()
         {
@@ -305,17 +313,6 @@ namespace LookDev.Editor
             }
             
             Debug.Log($"{Enum.GetName(typeof(SyncMode), mode)} Sync completed successfully.");
-        }
-
-        [MenuItem("LookDev Studio/Sync/Push Configuration")]
-        static void Push()
-        {
-            Synchronize(SyncMode.Push);
-        }
-        [MenuItem("LookDev Studio/Sync/Pull Configuration")]
-        static void Pull()
-        {
-            Synchronize(SyncMode.Pull);
         }
     }
 }

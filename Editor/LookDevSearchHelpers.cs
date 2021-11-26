@@ -3,6 +3,7 @@ using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
+using UnityEditor.EditorTools;
 
 namespace LookDev.Editor
 {
@@ -13,10 +14,20 @@ namespace LookDev.Editor
         public static IMGUIContainer searchViewContainer;
 
         public static string[] lookDevProviderNames =
-            new string[] { "LookDev_Material", "LookDev_Texture", "LookDev_Model", "LookDev_Shader", "LookDev_Light", "LookDev_HDRI", "LookDev_Animation" };
+            new string[]
+            {
+                "LookDev_Material", "LookDev_Texture", "LookDev_Model", "LookDev_Shader", "LookDev_Light",
+                "LookDev_HDRI", "LookDev_Animation"
+            };
 
         public static Texture[] lookDevSearchIcons =
-            new Texture[] { Resources.Load<Texture>("Icon_Mat"), Resources.Load<Texture>("Icon_Tex"), Resources.Load<Texture>("Icon_Mod"), Resources.Load<Texture>("Icon_Sha"), Resources.Load<Texture>("Icon_Lgt"), Resources.Load<Texture>("Icon_Hdr"), Resources.Load<Texture>("Icon_Anim") };
+            new Texture[]
+            {
+                Resources.Load<Texture>("Icon_Mat"), Resources.Load<Texture>("Icon_Tex"),
+                Resources.Load<Texture>("Icon_Mod"), Resources.Load<Texture>("Icon_Sha"),
+                Resources.Load<Texture>("Icon_Lgt"), Resources.Load<Texture>("Icon_Hdr"),
+                Resources.Load<Texture>("Icon_Anim")
+            };
 
         public static string[] lookDevSearchIconDesc =
             new string[] { "Material", "Texture", "Model", "Shader", "Light", "HDRi", "Animation" };
@@ -27,32 +38,46 @@ namespace LookDev.Editor
 
         static Color rectColor = Color.green;
 
+        public static Color lineColor = new Color(0.1568f, 0.1568f, 0.1568f);
+
+
         public static void OnGUI(Rect position)
         {
-            GUILayout.BeginArea(new Rect(1, position.height - 40, Screen.width, 40));
-            GUILayout.BeginHorizontal("Box");
-            GUILayout.FlexibleSpace();
+            float width = lookDevProviderNames.Length * 42;
+            float posX = (float)(position.width - width) * 0.5f;
 
-            for (int i=0;i<lookDevProviderNames.Length;i++)
+            EditorGUI.DrawRect(new Rect(0, position.height - 44, Screen.width, 1), lineColor);
+
+            GUILayout.BeginArea(new Rect(posX, position.height - 40, Screen.width - posX, 40));
+            GUILayout.BeginHorizontal("Box");
+            //GUILayout.FlexibleSpace();
+
+            for (int i = 0; i < lookDevProviderNames.Length; i++)
             {
-                GUILayout.Space(4);
-                if (GUILayout.Button(new GUIContent(lookDevSearchIcons[i], lookDevSearchIconDesc[i]), GUILayout.Width(32), GUILayout.Height(32)))
+                GUILayout.Space(3);
+                if (GUILayout.Button(new GUIContent(lookDevSearchIcons[i], lookDevSearchIconDesc[i]),
+                    GUILayout.Width(32), GUILayout.Height(32)))
                     SwitchCurrentProvider(i);
                 if (i == currentContextId)
                 {
                     Rect rect = GUILayoutUtility.GetLastRect();
                     EditorGUI.DrawRect(new Rect(rect.x, rect.height + 3, rect.width, 3), rectColor);
                 }
-                GUILayout.Space(4);
+
+                GUILayout.Space(3);
             }
 
-            GUILayout.FlexibleSpace();
+            //GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
         }
 
         public static void SwitchCurrentProvider(int index)
         {
+#if UNITY_EDITOR_OSX
+            Rect mainViewRect = LookDevHelpers.GetMainWindowRect();
+#endif
+
             if (index == -1)
             {
                 rectColor = Color.gray;
@@ -65,6 +90,25 @@ namespace LookDev.Editor
                 currentContextId = index;
                 searchView = SearchService.ShowWindow(context: lookDevSearchContext[currentContextId], reuseExisting: true, multiselect: true);
             }
+
+            if (searchView != null)
+                if (searchView.context != null)
+                    searchView.context.searchText = string.Empty;
+
+            // if the current tab is for Animation, Activate the AnimationToolOverlay
+            if (index == 6)
+            {
+                if (ToolManager.activeToolType != typeof(AnimationToolOverlay))
+                    ToolManager.SetActiveTool<AnimationToolOverlay>();
+            }
+
+#if UNITY_EDITOR_OSX
+            if (mainViewRect.width > 0 && mainViewRect.height > 0)
+            {
+                LookDevHelpers.SetMainWindowRect(mainViewRect);
+            }
+#endif
+
             RefreshWindow();
         }
 
@@ -80,21 +124,44 @@ namespace LookDev.Editor
 
             if (LookDevStudioEditor.IsHDRP())
             {
-                lookDevProviderNames = new string[] { "LookDev_Material", "LookDev_Texture", "LookDev_Model", "LookDev_Shader", "LookDev_Light", "LookDev_HDRI", "LookDev_Animation" };
-                lookDevSearchIcons = new Texture[] { Resources.Load<Texture>("Icon_Mat"), Resources.Load<Texture>("Icon_Tex"), Resources.Load<Texture>("Icon_Mod"), Resources.Load<Texture>("Icon_Sha"), Resources.Load<Texture>("Icon_Lgt"), Resources.Load<Texture>("Icon_Hdr"), Resources.Load<Texture>("Icon_Anim") };
-                lookDevSearchIconDesc = new string[] { "Material", "Texture", "Model", "Shader", "Light", "HDRi", "Animation" };
-    }
+                lookDevProviderNames = new string[]
+                {
+                    "LookDev_Material", "LookDev_Texture", "LookDev_Model", "LookDev_Shader", "LookDev_Light",
+                    "LookDev_HDRI", "LookDev_Animation"
+                };
+                lookDevSearchIcons = new Texture[]
+                {
+                    Resources.Load<Texture>("Icon_Mat"), Resources.Load<Texture>("Icon_Tex"),
+                    Resources.Load<Texture>("Icon_Mod"), Resources.Load<Texture>("Icon_Sha"),
+                    Resources.Load<Texture>("Icon_Lgt"), Resources.Load<Texture>("Icon_Hdr"),
+                    Resources.Load<Texture>("Icon_Anim")
+                };
+                lookDevSearchIconDesc = new string[]
+                    { "Material", "Texture", "Model", "Shader", "Light", "HDRi", "Animation" };
+            }
             else // if URP
             {
-                lookDevProviderNames = new string[] { "LookDev_Material", "LookDev_Texture", "LookDev_Model", "LookDev_Shader", "LookDev_Light", "LookDev_Skybox", "LookDev_Animation" };
-                lookDevSearchIcons = new Texture[] { Resources.Load<Texture>("Icon_Mat"), Resources.Load<Texture>("Icon_Tex"), Resources.Load<Texture>("Icon_Mod"), Resources.Load<Texture>("Icon_Sha"), Resources.Load<Texture>("Icon_Lgt"), Resources.Load<Texture>("Icon_Hdr"), Resources.Load<Texture>("Icon_Anim") };
-                lookDevSearchIconDesc = new string[] { "Material", "Texture", "Model", "Shader", "Light", "Skybox", "Animation" };
+                lookDevProviderNames = new string[]
+                {
+                    "LookDev_Material", "LookDev_Texture", "LookDev_Model", "LookDev_Shader", "LookDev_Light",
+                    "LookDev_Skybox", "LookDev_Animation"
+                };
+                lookDevSearchIcons = new Texture[]
+                {
+                    Resources.Load<Texture>("Icon_Mat"), Resources.Load<Texture>("Icon_Tex"),
+                    Resources.Load<Texture>("Icon_Mod"), Resources.Load<Texture>("Icon_Sha"),
+                    Resources.Load<Texture>("Icon_Lgt"), Resources.Load<Texture>("Icon_Hdr"),
+                    Resources.Load<Texture>("Icon_Anim")
+                };
+                lookDevSearchIconDesc = new string[]
+                    { "Material", "Texture", "Model", "Shader", "Light", "Skybox", "Animation" };
             }
 
 
             foreach (string lookDevProviderName in lookDevProviderNames)
             {
-                lookDevSearchContext.Add(new SearchContext(new List<SearchProvider>() { SearchService.GetProvider(lookDevProviderName) }));
+                lookDevSearchContext.Add(new SearchContext(new List<SearchProvider>()
+                    { SearchService.GetProvider(lookDevProviderName) }));
             }
 
             SetDisableAllProviders();
@@ -107,13 +174,15 @@ namespace LookDev.Editor
             // Force to have a gridview as default
             searchView.itemIconSize = (float)DisplayMode.Grid;
 
+            // Set Empty to SearchText
+            //searchView.context.searchText = string.Empty;
+
             VisualElement rootVisualElement = searchViewEditorWindow.rootVisualElement;
 
             if (rootVisualElement != null)
                 searchViewContainer = rootVisualElement.parent.Q<IMGUIContainer>(className: "unity-imgui-container");
 
             RegisterCallbacks();
-            
         }
 
         public static void RegisterCallbacks()
@@ -190,13 +259,12 @@ namespace LookDev.Editor
             {
                 SearchPopup searchPopup = new SearchPopup();
 
-                UnityEditor.PopupWindow.Show(new Rect(new Vector2(evt.localMousePosition.x, evt.localMousePosition.y), searchPopup.GetWindowSize()), searchPopup);
+                UnityEditor.PopupWindow.Show(
+                    new Rect(new Vector2(evt.localMousePosition.x, evt.localMousePosition.y),
+                        searchPopup.GetWindowSize()), searchPopup);
 
                 Event.current.Use();
             }
-
         }
-
-
     }
 }

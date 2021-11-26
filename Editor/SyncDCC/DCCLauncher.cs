@@ -78,7 +78,7 @@ namespace LookDev.Editor
         }
 
 
-        [MenuItem("DCC Sync/Get DCC paths")]
+        //[MenuItem("DCC Sync/Get DCC paths")]
         static void GetDCCPath()
         {
             Debug.Log(GetMeshDCCPath(MeshDCCs.Maya));
@@ -543,7 +543,10 @@ namespace LookDev.Editor
             }
 
             if (!File.Exists(maxPath))
+            {
+                Debug.LogError("Could not find Max Path. need to check the LDS Project settings.");
                 return;
+            }
 
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
 
@@ -608,7 +611,10 @@ namespace LookDev.Editor
 
 
             if (!File.Exists(mayaPath))
+            {
+                Debug.LogError("Could not find Maya Path. need to check the LDS Project settings.");
                 return;
+            }
 
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
 

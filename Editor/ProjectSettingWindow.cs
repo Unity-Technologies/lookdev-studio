@@ -33,7 +33,7 @@ namespace LookDev.Editor
                     // Apply post-processing on importing
 
                     // Apply DCCs settings
-                    switch(projectSetting.meshDccs)
+                    switch (projectSetting.meshDccs)
                     {
                         case MeshDCCs.Maya:
                             DCCLauncher.mayaPath = projectSetting.meshDccPath;
@@ -41,27 +41,27 @@ namespace LookDev.Editor
                         case MeshDCCs.Max:
                             DCCLauncher.maxPath = projectSetting.meshDccPath;
                             break;
-                        /*
-                        case MeshDCCs.Blender:
-                            DCCLauncher.blenderPath = projectSetting.meshDccPath;
-                            break;
-                        */
+                            /*
+                            case MeshDCCs.Blender:
+                                DCCLauncher.blenderPath = projectSetting.meshDccPath;
+                                break;
+                            */
                     }
 
-                    switch(projectSetting.paintingMeshDccs)
+                    switch (projectSetting.paintingMeshDccs)
                     {
                         case PaintingMeshDCCs.Substance_Painter:
                             DCCLauncher.substancePainterPath = projectSetting.paintingMeshDccPath;
                             break;
                     }
 
-                    switch(projectSetting.paintingTexDccs)
+                    switch (projectSetting.paintingTexDccs)
                     {
                         case PaintingTexDCCs.Photoshop:
                             DCCLauncher.photoShopPath = projectSetting.paintingTexDccPath;
                             break;
                     }
-                    
+
                 }
             }
         }
@@ -117,16 +117,21 @@ namespace LookDev.Editor
         {
             GUILayout.BeginVertical();
 
+            EditorGUILayout.Space();
+
             GUILayout.BeginHorizontal();
 
-            GUILayout.FlexibleSpace();
+            GUILayout.BeginArea(new Rect(10, 5, position.width * 0.85f, 30));
+            LightingPresetSceneChanger.OnGUI();
+            GUILayout.EndArea();
 
-            if (GUILayout.Button(Resources.Load<Texture>("Icon_Setting"), GUILayout.Width(30), GUILayout.Height(30)))
+            if (GUI.Button(new Rect(position.width - 30, 1, 27, 27), new GUIContent(Resources.Load<Texture>("Icon_Setting"), "Settings"), "Button"))
+            //if (GUILayout.Button(new GUIContent(Resources.Load<Texture>("Icon_Setting"), "Settings"), GUILayout.Width(24), GUILayout.Height(24)))
             {
                 ProjectSettingEditorWindow = EditorWindow.GetWindow<ProjectSettingEditorWindow>("Project Settings", true);
                 ProjectSettingEditorWindow.SetCurrentProjectSetting(projectSetting);
                 ProjectSettingEditorWindow.ResetWindowPosition();
-                ProjectSettingEditorWindow.ShowModalUtility();
+                ProjectSettingEditorWindow.Show();
 
                 GUIUtility.ExitGUI();
                 ApplyProjectSettings(currentProjectSettingPath);
@@ -135,6 +140,11 @@ namespace LookDev.Editor
             GUILayout.EndHorizontal();
 
             GUILayout.EndVertical();
+        }
+
+        public void RefreshWindow()
+        {
+            this.Repaint();
         }
     }
 }

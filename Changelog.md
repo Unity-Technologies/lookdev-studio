@@ -11,18 +11,18 @@ Key features of this release:
 
 - Lighting groups and preset customization:
     - New lighting and HDRi tabs
-    - Create and save custom lighting presets or lighting groups to use in LookDev Studio
+    - Create and save custom lighting presets or light prefabs to use in LookDev Studio
     - Create an HDRi from a Texture through context menu
 
 - Filtering
     - Organize your LookDev project by setting custom filters to view only the folders or subfolders you want to work on
-    - Right-click an Asset and select “show related Assets” 
+    - Right-click an Asset and select “show related Assets”
 
 - Project settings: 
     - Automatically generate Prefabs on model import
     - Automatically generate colliders on model import
     - Set preferred DCC tools to edit in DCC
-    - Choose external directory
+    - Select asset directory
 
 - Channel debugging:
     - Cycle quickly between debug channels using shortcuts (B & M keys) or by using a dropdown

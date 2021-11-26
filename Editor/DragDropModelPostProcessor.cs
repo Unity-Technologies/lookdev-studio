@@ -10,6 +10,28 @@ namespace LookDev.Editor
     {
         public static List<string> latestImportedAssets = new List<string>();
 
+
+        ColliderNameRules GetColliderNameRule()
+        {
+            ColliderNameRules colliderNameRules = AssetDatabase.LoadAssetAtPath<ColliderNameRules>(ColliderNameRules.DefaultColliderAssetPath);
+
+            if (colliderNameRules == null)
+            {
+                try
+                {
+                    colliderNameRules = new ColliderNameRules();
+                    AssetDatabase.CreateAsset(colliderNameRules, ColliderNameRules.DefaultColliderAssetPath);
+                }
+                catch
+                {
+                    Debug.LogError($"Failed to generate a Collider NameRule Asset : {ColliderNameRules.DefaultColliderAssetPath}");
+                    return null;
+                }
+            }
+
+            return colliderNameRules;
+        }
+
         static void RegisterImportedAsset(string importedAsset)
         {
             if (!latestImportedAssets.Contains(importedAsset))
@@ -36,6 +58,9 @@ namespace LookDev.Editor
 
         void OnPreprocessTexture()
         {
+            if (!LookDevStudioEditor.lookDevEnabled)
+                return;
+
             var sanitizedAssetPath = assetPath.ToLower().Replace("_", "");
             var extension = Path.GetExtension(assetPath);
 
@@ -126,6 +151,9 @@ namespace LookDev.Editor
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
+            if (!LookDevStudioEditor.lookDevEnabled)
+                return;
+
 #if LOOKDEV_LOGGING
             Debug.Log("DragDropModelPostProcessor::OnPostprocessAllAssets");
 #endif
@@ -140,10 +168,13 @@ namespace LookDev.Editor
                 if (!LookDevHelpers.IsSupportedExtension(Path.GetExtension(imported)))
                     continue;
 
+
                 // Check about whether the model imported on LookDev Mode
+                /*
                 if (imported.ToLower().Contains("lookdev/setup") ||
                     !imported.ToLower().Contains(("LookDev/").ToLower()))
                     continue;
+                */
 
                 // Ganerate Material
                 if (LookDevHelpers.IsModel(Path.GetExtension(imported)))
@@ -191,16 +222,20 @@ namespace LookDev.Editor
                             }
                         }
 
-                        //Debug.Log(savePath);
 
                         if (savePath != string.Empty)
                         {
+                            if (AssetDatabase.LoadAssetAtPath<Object>(savePath) != null)
+                            {
+                                Debug.LogWarning(
+                                    $"Same name of the prefab exists. so Prefab auto-generation was skipped.");
+                                continue;
+                            }
+
                             savePath = AssetDatabase.GenerateUniqueAssetPath(savePath);
                             go.name = Path.GetFileNameWithoutExtension(savePath);
                             PrefabUtility.SaveAsPrefabAssetAndConnect(go, savePath, InteractionMode.AutomatedAction);
                             AssetDatabase.SaveAssets();
-
-                            //Debug.Log("SAVE PREFAB!!");
                         }
                     }
                 }
@@ -289,81 +324,130 @@ namespace LookDev.Editor
             return true;
         }
 
+        #region Collider Generation
+
         void OnPostprocessModel(GameObject g)
         {
-            var meshFilters = g.GetComponentsInChildren<MeshFilter>();
-            List<GameObject> collisionGameObjects = new List<GameObject>();
+            if (ProjectSettingWindow.projectSetting == null || !LookDevStudioEditor.lookDevEnabled)
+                return;
 
-            foreach (var meshFilter in meshFilters)
+            if (!ProjectSettingWindow.projectSetting.AutoGenerateColliders)
+                return;
+
+
+            List<Transform> transformsToDestroy = new List<Transform>();
+
+            //Skip the root
+            foreach (Transform child in g.transform)
             {
-                if (MeshFilterHasPostFix(meshFilter, "_col"))
-                {
-                    var meshCollider = CreateCollider<MeshCollider>(meshFilter);
-                    meshCollider.convex = false;
-
-                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
-                    {
-                        collisionGameObjects.Add(meshFilter.gameObject);
-                    }
-                }
-                else if (MeshFilterHasPostFix(meshFilter, "_colx"))
-                {
-                    var meshCollider = CreateCollider<MeshCollider>(meshFilter);
-                    meshCollider.convex = true;
-
-                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
-                    {
-                        collisionGameObjects.Add(meshFilter.gameObject);
-                    }
-                }
-                else if (MeshFilterHasPostFix(meshFilter, "_colb"))
-                {
-                    CreateCollider<BoxCollider>(meshFilter);
-
-                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
-                    {
-                        collisionGameObjects.Add(meshFilter.gameObject);
-                    }
-                }
-                else if (MeshFilterHasPostFix(meshFilter, "_cols"))
-                {
-                    CreateCollider<SphereCollider>(meshFilter);
-
-                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
-                    {
-                        collisionGameObjects.Add(meshFilter.gameObject);
-                    }
-                }
-                else if (MeshFilterHasPostFix(meshFilter, "_colcap"))
-                {
-                    CreateCollider<CapsuleCollider>(meshFilter);
-
-                    if (!collisionGameObjects.Contains(meshFilter.gameObject))
-                    {
-                        collisionGameObjects.Add(meshFilter.gameObject);
-                    }
-                }
+                GenerateCollider(child, transformsToDestroy);
             }
 
-            for (int i = collisionGameObjects.Count - 1; i >= 0; --i)
+            for (int i = transformsToDestroy.Count - 1; i >= 0; --i)
             {
-                GameObject.DestroyImmediate(collisionGameObjects[i]);
+                if (transformsToDestroy[i] != null)
+                    GameObject.DestroyImmediate(transformsToDestroy[i].gameObject);
             }
         }
 
-        bool MeshFilterHasPostFix(MeshFilter meshFilter, string postfix)
+        bool DetectNamingConvention(Transform t, string convention)
         {
-            return meshFilter.sharedMesh.name.ToLower().EndsWith(postfix) ||
-                   meshFilter.gameObject.name.ToLower().EndsWith(postfix);
+            bool result = false;
+
+            if (t.gameObject.TryGetComponent(out MeshFilter meshFilter))
+            {
+                var lowercaseMeshName = meshFilter.sharedMesh.name.ToLower();
+                result = lowercaseMeshName.StartsWith($"{convention}_");
+            }
+
+            if (!result)
+            {
+                var lowercaseName = t.name.ToLower();
+                result = lowercaseName.StartsWith($"{convention}_");
+            }
+
+            return result;
         }
 
-        T CreateCollider<T>(MeshFilter collisionMeshFilter) where T : Collider
+        void GenerateCollider(Transform t, List<Transform> transformsToDestroy)
         {
-            T originalCollider = collisionMeshFilter.gameObject.AddComponent<T>();
-            var collider = collisionMeshFilter.transform.parent.gameObject.AddComponent<T>();
+            foreach (Transform child in t.transform)
+            {
+                GenerateCollider(child, transformsToDestroy);
+            }
 
-            EditorUtility.CopySerialized(originalCollider, collider);
-            return collider;
+            ColliderNameRules colliderRule = GetColliderNameRule();
+
+            if (DetectNamingConvention(t, colliderRule.boxCollider))
+            {
+                AddCollider<BoxCollider>(t);
+                transformsToDestroy.Add(t);
+            }
+            else if (DetectNamingConvention(t, colliderRule.capsuleCollider))
+            {
+                AddCollider<CapsuleCollider>(t);
+                transformsToDestroy.Add(t);
+            }
+            else if (DetectNamingConvention(t, colliderRule.sphereCollider))
+            {
+                AddCollider<SphereCollider>(t);
+                transformsToDestroy.Add(t);
+            }
+            else if (DetectNamingConvention(t, colliderRule.meshConvexCollider))
+            {
+                TranslateSharedMesh(t.GetComponent<MeshFilter>());
+                var collider = AddCollider<MeshCollider>(t);
+                collider.convex = true;
+                transformsToDestroy.Add(t);
+            }
+            else if (DetectNamingConvention(t, colliderRule.meshCollider))
+            {
+                TranslateSharedMesh(t.GetComponent<MeshFilter>());
+                AddCollider<MeshCollider>(t);
+                transformsToDestroy.Add(t);
+            }
         }
+
+        void TranslateSharedMesh(MeshFilter meshFilter)
+        {
+            if (meshFilter == null)
+                return;
+
+            var transform = meshFilter.transform;
+            var mesh = meshFilter.sharedMesh;
+            var vertices = mesh.vertices;
+
+            for (int i = 0; i < vertices.Length; ++i)
+            {
+                vertices[i] = transform.TransformPoint(vertices[i]);
+                vertices[i] = transform.parent.InverseTransformPoint(vertices[i]);
+            }
+
+            mesh.SetVertices(vertices);
+        }
+
+        T AddCollider<T>(Transform t) where T : Collider
+        {
+            T collider = t.gameObject.AddComponent<T>();
+            T parentCollider = t.parent.gameObject.AddComponent<T>();
+            parentCollider.name = t.name;
+
+            EditorUtility.CopySerialized(collider, parentCollider);
+            SerializedObject parentColliderSo = new SerializedObject(parentCollider);
+            var parentCenterProperty = parentColliderSo.FindProperty("m_Center");
+            if (parentCenterProperty != null)
+            {
+                SerializedObject colliderSo = new SerializedObject(collider);
+                var colliderCenter = colliderSo.FindProperty("m_Center");
+                var worldSpaceColliderCenter = t.TransformPoint(colliderCenter.vector3Value);
+
+                parentCenterProperty.vector3Value = t.parent.InverseTransformPoint(worldSpaceColliderCenter);
+                parentColliderSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            return parentCollider;
+        }
+
+        #endregion
     }
 }

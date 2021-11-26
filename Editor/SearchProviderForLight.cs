@@ -12,10 +12,11 @@ namespace LookDev.Editor
         internal static string name = "Light";
 
         public static List<string> folders = new List<string>();
+
+        static readonly string[] defaultLookdevFolder = new string[] { "Assets/LookDev/Scenes", "Assets/LookDev/Lights" };
         public static string[] defaultFolders = new string[] { "Assets/LookDev/Scenes", "Assets/LookDev/Lights" };
 
-        public static bool showLightingPresetScene;
-        public static bool showLightingGroup;
+        static string[] results;
 
 
         [SearchItemProvider]
@@ -28,33 +29,30 @@ namespace LookDev.Editor
                 priority = 14,
                 fetchItems = (context, items, provider) =>
                 {
-                    string projectPath = ProjectSettingWindow.projectSetting.GetImportAssetPath();
-                    if (string.IsNullOrEmpty(projectPath) == false)
-                        defaultFolders = new string[] { projectPath };
+                    if (ProjectSettingWindow.projectSetting != null)
+                    {
+                        string projectPath = ProjectSettingWindow.projectSetting.GetImportAssetPath();
+                        if (string.IsNullOrEmpty(projectPath) == false)
+                            defaultFolders = new string[] { projectPath };
+                        else
+                            defaultFolders = defaultLookdevFolder;
+                    }
+                    else
+                        defaultFolders = defaultLookdevFolder;
 
-                    string[] results;
-
-                    string filter = string.Empty;
-
-                    if (showLightingPresetScene)
-                        filter = filter + "t:Scene ";
-                    if (showLightingGroup)
-                        filter = filter + "t:Prefab ";
 
                     if (folders.Count == 0)
-                        results = AssetDatabase.FindAssets("t:Scene t:Prefab " + context.searchQuery, defaultFolders);
+                        results = AssetDatabase.FindAssets("t:Prefab " + context.searchQuery, defaultFolders);
                     else
-                    {
-                        if (filter == string.Empty)
-                            return null;
-
-                        results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, folders.ToArray());
-                    }
+                        results = AssetDatabase.FindAssets("t:Prefab " + context.searchQuery, folders.ToArray());
 
                     foreach (var guid in results)
                     {
                         string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                         Object assetObj = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+
+                        if (assetObj.GetType() == typeof(SceneAsset))
+                            continue;
 
                         string previewPath = assetPath.Replace(Path.GetFileName(assetPath), Path.GetFileNameWithoutExtension(assetPath) + ".png");
 
@@ -69,6 +67,9 @@ namespace LookDev.Editor
 
                         items.Add(provider.CreateItem(context, assetPath, null, null, null, null));
                     }
+
+                    results.Initialize();
+
                     return null;
 
                 },
@@ -84,20 +85,19 @@ namespace LookDev.Editor
 
                     if (previewTex != null)
                     {
-                        item.preview = AssetPreview.GetAssetPreview(previewTex) as Texture2D;
+                        return AssetPreview.GetAssetPreview(previewTex) as Texture2D;
                     }
                     else
-                        item.preview = AssetPreview.GetAssetPreview(item.ToObject()) as Texture2D;
-                    return null;
+                        return AssetPreview.GetAssetPreview(item.ToObject()) as Texture2D;
                 },
                 fetchLabel = (item, context) => AssetDatabase.LoadMainAssetAtPath(item.id)?.name,
-                fetchDescription = (item, context) => AssetDatabase.LoadMainAssetAtPath(item.id)?.name,
+                fetchDescription = (item, context) => item.id,
                 toObject = (item, type) => AssetDatabase.LoadMainAssetAtPath(item.id),
 #pragma warning restore UNT0008 // Null propagation on Unity objects
                 // Shows handled actions in the preview inspector
                 // Shows inspector view in the preview inspector (uses toObject)
-                showDetails = true,
-                showDetailsOptions = ShowDetailsOptions.Inspector | ShowDetailsOptions.Actions | ShowDetailsOptions.Preview,
+                showDetails = false,
+                showDetailsOptions = ShowDetailsOptions.None,
                 trackSelection = (item, context) =>
                 {
                     var obj = AssetDatabase.LoadMainAssetAtPath(item.id);
@@ -105,7 +105,7 @@ namespace LookDev.Editor
                     {
                         if (context.selection.Count == 1)
                         {
-                            EditorGUIUtility.PingObject(obj.GetInstanceID());
+                            //EditorGUIUtility.PingObject(obj.GetInstanceID());
                             Selection.activeInstanceID = obj.GetInstanceID();
                         }
                         else if (context.selection.Count > 1)

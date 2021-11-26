@@ -62,7 +62,7 @@ namespace LookDev.Editor
         }
 
 
-        [MenuItem("DCC Sync/DCC Linker")]
+        //[MenuItem("DCC Sync/DCC Linker")]
         static void ShowWindow()
         {
 

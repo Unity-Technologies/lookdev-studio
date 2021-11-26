@@ -8,7 +8,10 @@ namespace LookDev.Editor
         //NOTE: Hiding for the sake of the warning
         //private float m_lastCameraScale = 0f;
 
+
         MaterialBrowserPopup contentPopup = new MaterialBrowserPopup();
+
+        Color lineColor = new Color(0.1568f, 0.1568f, 0.1568f);
 
         public void OnGUI()
         {
@@ -24,7 +27,9 @@ namespace LookDev.Editor
 
         void QuickImportControl()
         {
-            GUILayout.BeginArea(new Rect(1,(int)((float)position.height * 0.05f), Screen.width, 40));
+            EditorGUI.DrawRect(new Rect(0, 0, Screen.width, 1), lineColor);
+
+            GUILayout.BeginArea(new Rect(1,(int)((float)position.height * 0.13f), Screen.width, 40));
 
             EditorGUILayout.BeginHorizontal(GUILayout.Width(position.width - 8f));
 

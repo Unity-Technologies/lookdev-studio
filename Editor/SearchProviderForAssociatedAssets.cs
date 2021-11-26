@@ -63,13 +63,13 @@ namespace LookDev.Editor
                 fetchThumbnail = (item, context) => AssetDatabase.GetCachedIcon(item.id) as Texture2D,
                 fetchPreview = (item, context, size, options) => AssetPreview.GetAssetPreview(item.ToObject()) as Texture2D,
                 fetchLabel = (item, context) => AssetDatabase.LoadMainAssetAtPath(item.id)?.name,
-                fetchDescription = (item, context) => AssetDatabase.LoadMainAssetAtPath(item.id)?.name,
+                fetchDescription = (item, context) => item.id,
                 toObject = (item, type) => AssetDatabase.LoadMainAssetAtPath(item.id),
 #pragma warning restore UNT0008 // Null propagation on Unity objects
                 // Shows handled actions in the preview inspector
                 // Shows inspector view in the preview inspector (uses toObject)
-                showDetails = true,
-                showDetailsOptions = ShowDetailsOptions.Inspector | ShowDetailsOptions.Actions | ShowDetailsOptions.Preview,
+                showDetails = false,
+                showDetailsOptions = ShowDetailsOptions.None,
                 trackSelection = (item, context) =>
                 {
                     var obj = AssetDatabase.LoadMainAssetAtPath(item.id);
@@ -77,7 +77,7 @@ namespace LookDev.Editor
                     {
                         if (context.selection.Count == 1)
                         {
-                            EditorGUIUtility.PingObject(obj.GetInstanceID());
+                            //EditorGUIUtility.PingObject(obj.GetInstanceID());
                             Selection.activeInstanceID = obj.GetInstanceID();
                         }
                         else if (context.selection.Count > 1)

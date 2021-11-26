@@ -49,17 +49,27 @@ namespace LookDev.Editor
             "Mask Map",
             "Bent Normal map",
             "Subsurface Mask Map",
-            "Thickness Map"
+            "Thickness Map",
+            "Base Map",
+            "Normal Map",
+            "Specular Map",
+            "Metallic Map",
+            "Height Map"
         };
 
         static List<string> TextureName = new List<string>()
         {
-        "_BaseColorMap",
-        "_NormalMap",
-        "_MaskMap",
-        "_BentNormalMap",
-        "_SubsurfaceMaskMap",
-        "_ThicknessMap"
+            "_BaseColorMap",
+            "_NormalMap",
+            "_MaskMap",
+            "_BentNormalMap",
+            "_SubsurfaceMaskMap",
+            "_ThicknessMap",
+            "_BaseMap",
+            "_BumpMap",
+            "_SpecGlossMap",
+            "_MetallicGlossMap",
+            "_ParallaxMap"
         };
 
         // Place the texture cards on the table
@@ -74,7 +84,7 @@ namespace LookDev.Editor
             }
         }
 
-        Dictionary<int, List<string>> LitTextureGroup = new Dictionary<int, List<string>>()
+        Dictionary<int, List<string>> LitTextureGroupOnHDRP = new Dictionary<int, List<string>>()
         {   
             // SubSurface Scaterring
             {0, new List<string>() { "_BaseColorMap", "_MaskMap", "_NormalMap", "_BentNormalMap", "_SubsurfaceMaskMap", "_ThicknessMap", "_CoatMaskMap", "_DetailMap", "_EmissiveColorMap" }},
@@ -95,6 +105,19 @@ namespace LookDev.Editor
             {5, new List<string>() { "_BaseColorMap", "_MaskMap", "_NormalMap", "_BentNormalMap", "_ThicknessMap", "_CoatMaskMap", "_DetailMap", "_EmissiveColorMap" }},
         };
 
+
+        
+        Dictionary<int, List<string>> LitTextureGroupOnURP = new Dictionary<int, List<string>>()
+        {
+            // Specular
+            {0, new List<string>() { "_BaseMap", "_SpecGlossMap", "_BumpMap", "_ParallaxMap", "_OcclusionMap", "_EmissionMap" }},
+
+            // Metallic
+            {1, new List<string>() { "_BaseMap", "_MetallicGlossMap", "_BumpMap", "_ParallaxMap", "_OcclusionMap", "_EmissionMap" }},
+        };
+
+
+
         Dictionary<string, string> LitTextureDesc = new Dictionary<string, string>()
         {
             {"_BaseColorMap", "Base Map"},
@@ -111,6 +134,13 @@ namespace LookDev.Editor
             {"_IridescenceMaskMap", "Iridescence Mask Map"},
             {"_IridescenceThicknessMap", "Iridescence Thickness Map"},
             {"_SpecularColorMap", "Specular Color Map"},
+            {"_SpecGlossMap", "Specular Map"},
+            {"_MetallicGlossMap", "Metallic Map"},
+            {"_ParallaxMap", "Height Map"},
+            {"_OcclusionMap", "Occlusion Map"},
+            {"_EmissionMap", "Emission Map"},
+            {"_BaseMap", "Base Map" },
+            {"_BumpMap", "Normal Map" }
         };
 
         Dictionary<string, string> LitKeywordGroup = new Dictionary<string, string>()
@@ -129,13 +159,23 @@ namespace LookDev.Editor
             {"_IridescenceMaskMap", "_MATERIAL_FEATURE_IRIDESCENCE"},
             {"_IridescenceThicknessMap", "_IRIDESCENCE_THICKNESSMAP"},
             {"_SpecularColorMap", "_SPECULARCOLORMAP"},
+            {"_BumpMap", "_NORMALMAP"},
+            {"_SpecGlossMap", "_METALLICSPECGLOSSMAP" },
+            {"_MetallicGlossMap", "_METALLICSPECGLOSSMAP" },
+            {"_ParallaxMap", "_PARALLAXMAP" },
+            {"_OcclusionMap", "_OCCLUSIONMAP" },
+            {"_EmissionMap", "_EMISSION" },
         };
 
-        List<string> GetLitTexturePropertiesByID(int materialID)
+        List<string> GetHDRPLitTexturePropertiesByID(int materialID)
         {
-            return LitTextureGroup[materialID];
+            return LitTextureGroupOnHDRP[materialID];
         }
 
+        List<string> GetURPLitTexturePropertiesByID(int modeID)
+        {
+            return LitTextureGroupOnURP[modeID];
+        }
 
         public List<string> GetEssentialTexturePropertyNames(Material targetMat)
         {
@@ -145,7 +185,7 @@ namespace LookDev.Editor
             if (targetMat.shader.name == "HDRP/Lit" || targetMat.shader.name == "HDRP/LitTessellation")
             {
                 int materialID = (int)targetMat.GetFloat("_MaterialID");
-                output = GetLitTexturePropertiesByID(materialID);
+                output = GetHDRPLitTexturePropertiesByID(materialID);
 
                 if ((int)targetMat.GetFloat("_DisplacementMode") != 0)
                 {
@@ -157,6 +197,12 @@ namespace LookDev.Editor
                     if (output.Contains("_HeightMap") == true)
                         output.Remove("_HeightMap");
                 }
+            }
+            else if (targetMat.shader.name == "Universal Render Pipeline/Lit")
+            {
+                int modeID = (int)targetMat.GetFloat("_WorkflowMode");
+                output = GetURPLitTexturePropertiesByID(modeID);
+
             }
             
             return output;
@@ -224,7 +270,7 @@ namespace LookDev.Editor
             {
                 Inst.position = AllocatorWindowSize;
 
-                Inst.minSize = new Vector2(1280, 720);
+                Inst.minSize = new Vector2(1280, 850);
 
             }
         }
@@ -885,9 +931,9 @@ namespace LookDev.Editor
                     if (latestHandlingWinID == -1)
                         break;
 
-
                     if (latestHandlingWinID < 100)
                     {
+
                         if (RectOverlap(m_LoadedTextureCardWindow[latestHandlingWinID], m_LoadedTextureSlot[i]))
                         {
 
@@ -952,6 +998,7 @@ namespace LookDev.Editor
                     else // if existing textures are dragged
                     {
                         int relativeIndex = latestHandlingWinID - 100;
+
 
                         if (RectOverlap(existingTextureCardWindow[relativeIndex], m_LoadedTextureSlot[i]))
                         {
@@ -1092,6 +1139,17 @@ namespace LookDev.Editor
 
                             RefreshAllPreviews();
                         }
+
+                        // Not to get stuck on the Model/Material/Texture Preview
+                        if (latestHandlingWinID < 100)
+                        {
+                            if (RectOverlap(m_LoadedTextureCardWindow[latestHandlingWinID], new Rect(20, 20, 280, 280)) ||
+                                RectOverlap(m_LoadedTextureCardWindow[latestHandlingWinID], new Rect(430, 20, 280, 280)) ||
+                                RectOverlap(m_LoadedTextureCardWindow[latestHandlingWinID], new Rect(840, 20, 280, 280)) )
+                            {
+                                OnChangeCurrentSelectedMaterial(m_currentSelectedMaterialIndex);
+                            }
+                        }
                     }
 
                 }
@@ -1129,6 +1187,7 @@ namespace LookDev.Editor
 
                         OnChangeCurrentSelectedMaterial(m_currentSelectedMaterialIndex);
                     }
+
                 }
             }
         }
@@ -1532,33 +1591,35 @@ namespace LookDev.Editor
                 latestHandlingWinID = unusedWindowID;
             }
 
-            GUILayout.BeginVertical("Box");
-
-            float yOffset = 17;
-
-            if (GUI.Button(new Rect(0, 0, existingTextureCardWindow[unusedWindowID - 100].width, yOffset), "Texture"))
+            if (unusedWindowID - 100 >= 0 && unusedWindowID - 100 < existingTextureCardWindow.Count)
             {
-                DisplayCurrentTexture(existingTextures[unusedWindowID - 100]);
+                GUILayout.BeginVertical("Box");
+
+                float yOffset = 17;
+
+                if (GUI.Button(new Rect(0, 0, existingTextureCardWindow[unusedWindowID - 100].width, yOffset), "Texture"))
+                {
+                    DisplayCurrentTexture(existingTextures[unusedWindowID - 100]);
+                }
+
+                EditorGUI.DrawPreviewTexture(new Rect(0, yOffset, existingTextureCardWindow[unusedWindowID - 100].width, existingTextureCardWindow[unusedWindowID - 100].height - yOffset), existingTextures[unusedWindowID - 100]);
+                GUILayout.Label(existingTextures[unusedWindowID - 100].name, GUILayout.Width(texWinSize), GUILayout.Height(texWinSize));
+
+                if (GUI.Button(new Rect(existingTextureCardWindow[unusedWindowID - 100].width - 22, yOffset + 2, 20, 20), new GUIContent("X", "Remove this texture")))
+                {
+                    if (EditorUtility.DisplayDialog("Remove selected Texture?", $"[{existingTextures[unusedWindowID - 100].name}]\nRemoving the Texture from the Texture Allocator will not delete the Texture from your Project.", "Yes", "No"))
+                        RemoveTextureCardByID(unusedWindowID);
+                }
+
+                GUILayout.EndVertical();
+
+                if (Event.current.button == 1 && Event.current.type == EventType.MouseUp)
+                {
+                    latestHandlingWinID = unusedWindowID;
+                    PopupWindow.Show(new Rect(0, 0, existingTextureCardWindow[unusedWindowID - 100].width, existingTextureCardWindow[unusedWindowID - 100].height), txLinkPopup);
+                    Event.current.Use();
+                }
             }
-            
-            EditorGUI.DrawPreviewTexture(new Rect(0, yOffset, existingTextureCardWindow[unusedWindowID - 100].width, existingTextureCardWindow[unusedWindowID - 100].height - yOffset), existingTextures[unusedWindowID - 100]);
-            GUILayout.Label(existingTextures[unusedWindowID-100].name, GUILayout.Width(texWinSize), GUILayout.Height(texWinSize));
-
-            if (GUI.Button(new Rect(existingTextureCardWindow[unusedWindowID - 100].width - 22, yOffset + 2, 20, 20), new GUIContent("X","Remove this texture")))
-            {
-                if (EditorUtility.DisplayDialog("Remove selected Texture?", $"[{existingTextures[unusedWindowID - 100].name}]\nRemoving the Texture from the Texture Allocator will not delete the Texture from your Project.", "Yes", "No"))
-                    RemoveTextureCardByID(unusedWindowID);
-            }
-
-            GUILayout.EndVertical();
-
-            if (Event.current.button == 1 && Event.current.type == EventType.MouseUp)
-            {
-                latestHandlingWinID = unusedWindowID;
-                PopupWindow.Show(new Rect(0, 0, existingTextureCardWindow[unusedWindowID-100].width, existingTextureCardWindow[unusedWindowID-100].height), txLinkPopup);
-                Event.current.Use();
-            }
-
             GUI.DragWindow();
         }
 

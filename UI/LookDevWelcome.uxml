@@ -1,5 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <ui:Label text="Welcome to LookDev Studio" display-tooltip-when-elided="true" style="-unity-text-align: middle-center;" />
+    <ui:Label text="Step 0: Install Dependencies" display-tooltip-when-elided="true" />
+    <ui:Button text="Install HDRP Package" display-tooltip-when-elided="true" name="InstallHdrpButton" />
+    <ui:Button text="Install URP Package" display-tooltip-when-elided="true" name="InstallUrpButton" />
     <ui:Label text="Step 1: Install Assets" display-tooltip-when-elided="true" />
     <ui:Button text="Install HDRP Assets" display-tooltip-when-elided="true" name="InstallHdrpAssetsButton" />
     <ui:Button text="Install URP Assets" display-tooltip-when-elided="true" name="InstallUrpAssetsButton" />

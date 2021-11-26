@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
-using System.Linq;
 using System.IO;
-using UnityEditor.EditorTools;
+
 
 namespace LookDev.Editor
 {
@@ -14,7 +13,11 @@ namespace LookDev.Editor
         internal static string name = "Animation";
 
         public static List<string> folders = new List<string>();
+
+        static readonly string defaultLookdevFolder = "Assets/LookDev";
         public static string defaultFolder = "Assets/LookDev";
+
+        static string[] results;
 
 
         [SearchItemProvider]
@@ -27,11 +30,18 @@ namespace LookDev.Editor
                 priority = 20, // put example provider at a low priority
                 fetchItems = (context, items, provider) =>
                 {
-                    string projectPath = ProjectSettingWindow.projectSetting.GetImportAssetPath();
-                    if (string.IsNullOrEmpty(projectPath) == false)
-                        defaultFolder = projectPath;
+                    if (ProjectSettingWindow.projectSetting != null)
+                    {
+                        string projectPath = ProjectSettingWindow.projectSetting.GetImportAssetPath();
+                        if (string.IsNullOrEmpty(projectPath) == false)
+                            defaultFolder = projectPath;
+                        else
+                            defaultFolder = defaultLookdevFolder;
+                    }
+                    else
+                        defaultFolder = defaultLookdevFolder;
 
-                    string[] results;
+
                     if (folders.Count == 0)
                         results = AssetDatabase.FindAssets("t:Animationclip " + context.searchQuery, new string[] { defaultFolder });
                     else
@@ -68,8 +78,8 @@ namespace LookDev.Editor
 
                     }
 
-                    if (ToolManager.activeToolType != typeof(AnimationToolOverlay))
-                        ToolManager.SetActiveTool<AnimationToolOverlay>();
+                    results.Initialize();
+
 
                     return null;
 
@@ -103,8 +113,8 @@ namespace LookDev.Editor
 #pragma warning restore UNT0008 // Null propagation on Unity objects
                 // Shows handled actions in the preview inspector
                 // Shows inspector view in the preview inspector (uses toObject)
-                showDetails = true,
-                showDetailsOptions = ShowDetailsOptions.Inspector | ShowDetailsOptions.Actions | ShowDetailsOptions.Preview,
+                showDetails = false,
+                showDetailsOptions = ShowDetailsOptions.None,
                 trackSelection = (item, context) =>
                 {
                     var obj = AssetDatabase.LoadMainAssetAtPath(item.id);
@@ -112,7 +122,7 @@ namespace LookDev.Editor
                     {
                         if (context.selection.Count == 1)
                         {
-                            EditorGUIUtility.PingObject(obj.GetInstanceID());
+                            //EditorGUIUtility.PingObject(obj.GetInstanceID());
                             Selection.activeInstanceID = obj.GetInstanceID();
                         }
                         else if (context.selection.Count > 1)

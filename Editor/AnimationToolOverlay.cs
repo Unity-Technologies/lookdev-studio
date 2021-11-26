@@ -9,6 +9,7 @@ using UnityEditor.EditorTools;
 public class AnimationToolOverlay : EditorTool
 {
     GUIContent m_IconContent;
+    float speed = 1f;
 
     void OnEnable()
     {
@@ -42,7 +43,7 @@ public class AnimationToolOverlay : EditorTool
 
         if (AnimationTool.loadedClips.Count > 0)
         {
-            GUILayout.BeginArea(new Rect(window.position.width - 200, (window.position.height - 200) - (25 * AnimationTool.loadedClips.Count), 180, 115 + (25 * AnimationTool.loadedClips.Count)));
+            GUILayout.BeginArea(new Rect(window.position.width - 200, (window.position.height - 250) - (25 * AnimationTool.loadedClips.Count), 180, 115 + (25 * AnimationTool.loadedClips.Count)));
             {
                 GUILayout.BeginVertical();
                 {
@@ -63,6 +64,7 @@ public class AnimationToolOverlay : EditorTool
                             {
                                 AnimationTool.LoadAnimation(loadedClip);
                                 AnimationTool.PlayAnimator();
+                                GUIUtility.ExitGUI();
                             }
 
                             if (GUILayout.Button("X"))
@@ -81,31 +83,69 @@ public class AnimationToolOverlay : EditorTool
         }
 
 
-        GUILayout.BeginArea(new Rect(window.position.width - 200, window.position.height - 125, 180, 115));
+        GUILayout.BeginArea(new Rect(window.position.width - 200, window.position.height - 175, 180, 145));
         {
             GUILayout.BeginVertical();
             {
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Animation Tool", EditorStyles.boldLabel);
+                if (GUILayout.Button("X", GUILayout.Width(18), GUILayout.Height(18)))
+                {
+                    Tools.current = Tool.None;
+                }
+                GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal("Box");
+
 
                 if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimRewind"), GUILayout.Width(32), GUILayout.Height(32)))
                     AnimationTool.RewindAnimator();
 
-                if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimPlay"), GUILayout.Width(32), GUILayout.Height(32)))
-                    AnimationTool.PlayAnimator();
-
-                if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimPause"), GUILayout.Width(32), GUILayout.Height(32)))
-                    AnimationTool.PauseAnimator();
+                if (AnimationTool.isPlayed == false)
+                {
+                    if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimPlay"), GUILayout.Width(32), GUILayout.Height(32)))
+                    {
+                        if (AnimationTool.targetAnimator != null)
+                        {
+                            AnimationTool.PlayAnimator();
+                            AnimationTool.isPlayed = true;
+                            GUIUtility.ExitGUI();
+                        }
+                    }
+                }
+                else
+                {
+                    if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimPause"), GUILayout.Width(32), GUILayout.Height(32)))
+                    {
+                        AnimationTool.PauseAnimator();
+                        AnimationTool.isPlayed = false;
+                    }
+                }
 
                 if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimStop"), GUILayout.Width(32), GUILayout.Height(32)))
+                {
                     AnimationTool.StopAnimator();
+                    AnimationTool.isPlayed = false;
+                }
 
                 if (GUILayout.Button(Resources.Load<Texture>("Icon_AnimReset"), GUILayout.Width(32), GUILayout.Height(32)))
+                {
                     AnimationTool.ResetAnimator();
+                    AnimationTool.isPlayed = false;
+                }
 
                 GUILayout.EndHorizontal();
 
+                GUILayout.Label("Speed", EditorStyles.boldLabel);
+
+                EditorGUI.BeginChangeCheck();
+                speed = EditorGUILayout.Slider(speed, 0f, 3f);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    AnimationTool.SetSpeed(speed);
+                }
+
+                EditorGUILayout.Space();
                 AnimationTool.autoRewind = GUILayout.Toggle(AnimationTool.autoRewind, "Loop Animation");
             }
             GUILayout.EndVertical();

@@ -14,10 +14,15 @@ namespace LookDev.Editor
         public static List<string> folders = new List<string>();
         public static List<string> objectsGUID = new List<string>();
 
+        static readonly string defaultLookdevFolder = "Assets/LookDev/Models";
         public static string defaultFolder = "Assets/LookDev/Models";
 
         public static bool showModel;
         public static bool showPrefab;
+
+        static string[] results;
+        static List<string> resultList = new List<string>();
+
 
         [SearchItemProvider]
         internal static SearchProvider CreateProvider()
@@ -29,9 +34,16 @@ namespace LookDev.Editor
                 priority = 12, // put example provider at a low priority
                 fetchItems = (context, items, provider) =>
                 {
-                    string projectPath = ProjectSettingWindow.projectSetting.GetImportAssetPath();
-                    if (string.IsNullOrEmpty(projectPath) == false)
-                        defaultFolder = projectPath;
+                    if (ProjectSettingWindow.projectSetting != null)
+                    {
+                        string projectPath = ProjectSettingWindow.projectSetting.GetImportAssetPath();
+                        if (string.IsNullOrEmpty(projectPath) == false)
+                            defaultFolder = projectPath;
+                        else
+                            defaultFolder = defaultLookdevFolder;
+                    }
+                    else
+                        defaultFolder = defaultLookdevFolder;
 
                     string filter = string.Empty;
 
@@ -40,13 +52,13 @@ namespace LookDev.Editor
                     if (showPrefab)
                         filter = filter + "t:Prefab ";
 
-                    string[] results;
-                    List<string> resultList = new List<string>();
+                    resultList.Clear();
 
                     if (folders.Count == 0 && objectsGUID.Count == 0)
                     {
-                        results = AssetDatabase.FindAssets("t:Model t:Prefab " + context.searchQuery, new string[] { defaultFolder });
+                        results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, new string[] { defaultFolder });
                         resultList = results.ToList<string>();
+                        results.Initialize();
                     }
                     else
                     {
@@ -57,6 +69,7 @@ namespace LookDev.Editor
                         {
                             results = AssetDatabase.FindAssets($"{filter}" + context.searchQuery, folders.ToArray());
                             resultList = results.ToList<string>();
+                            results.Initialize();
                         }
 
                         if (objectsGUID.Count != 0)
@@ -67,7 +80,6 @@ namespace LookDev.Editor
                                     resultList.Add(objectsGUID[i]);
                             }
 
-                            //results = resultList.ToArray();
                         }
                     }
 
@@ -90,10 +102,10 @@ namespace LookDev.Editor
                         if (firstRenderer == null && foundAnimation == true)
                             continue;
 
+                        if (firstRenderer == null && foundAnimation == false)
+                            continue;
                         if (firstRenderer != null)
                             items.Add(provider.CreateItem(context, AssetDatabase.GUIDToAssetPath(guid), null, null, null, null));
-                        //else
-                        //    AssetDatabase.DeleteAsset(assetPath);
 
                     }
                     return null;
@@ -104,13 +116,13 @@ namespace LookDev.Editor
                 fetchThumbnail = (item, context) => AssetDatabase.GetCachedIcon(item.id) as Texture2D,
                 fetchPreview = (item, context, size, options) => AssetPreview.GetAssetPreview(item.ToObject()) as Texture2D,
                 fetchLabel = (item, context) => AssetDatabase.LoadMainAssetAtPath(item.id)?.name,
-                fetchDescription = (item, context) => AssetDatabase.LoadMainAssetAtPath(item.id)?.name,
+                fetchDescription = (item, context) => item.id,
                 toObject = (item, type) => AssetDatabase.LoadMainAssetAtPath(item.id),
 #pragma warning restore UNT0008 // Null propagation on Unity objects
                 // Shows handled actions in the preview inspector
                 // Shows inspector view in the preview inspector (uses toObject)
-                showDetails = true,
-                showDetailsOptions = ShowDetailsOptions.Inspector | ShowDetailsOptions.Actions | ShowDetailsOptions.Preview,
+                showDetails = false,
+                showDetailsOptions = ShowDetailsOptions.None,
                 trackSelection = (item, context) =>
                 {
                     var obj = AssetDatabase.LoadMainAssetAtPath(item.id);
@@ -118,7 +130,7 @@ namespace LookDev.Editor
                     {
                         if (context.selection.Count == 1)
                         {
-                            EditorGUIUtility.PingObject(obj.GetInstanceID());
+                            //EditorGUIUtility.PingObject(obj.GetInstanceID());
                             Selection.activeInstanceID = obj.GetInstanceID();
                         }
                         else if (context.selection.Count > 1)
@@ -244,12 +256,15 @@ namespace LookDev.Editor
                         instantFilter.showModel = true;
                         instantFilter.showPrefab = true;
 
-                        lookDevSearchFilters.OnRemoveAllFilters();
-                        
                         LookDevSearchFilters.SaveFilter(instantFilter);
-                        //LookDevSearchFilters.AddFilter(instantFilter);
-                        
+
                         LookDevSearchFilters.RefreshFilters();
+
+                        lookDevSearchFilters.OnRemoveAllFilters();
+
+                        if (LookDevSearchFilters.filters.ContainsKey(instantFilter.filterName))
+                            LookDevSearchFilters.filters[instantFilter.filterName].enabled = true;
+
                         lookDevSearchFilters.OnChangedFilters();
                     }
                 }

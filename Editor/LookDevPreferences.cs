@@ -8,7 +8,6 @@ namespace LookDev.Editor
     {
         public bool AreAssetsInstalled;
         public bool IsRenderPipelineInitialized;
-        public bool IsCameraLoaded = false;
         public bool EnableDeveloperMode = false;
         public bool EnableHDRISky = true;
         public bool EnableGroundPlane = true;
@@ -19,7 +18,9 @@ namespace LookDev.Editor
         static string[] _lookDevSessionGuids;
         static GUIStyle _lockedLabelStyle;
         static Texture2D _lockedIcon;
-        
+
+        public bool DoNotShowFeedbackWinOnStart = false;
+
         public const string ScreencaptureFolder = "Screenshots";
 
         public static GUIStyle LockedLabelStyle

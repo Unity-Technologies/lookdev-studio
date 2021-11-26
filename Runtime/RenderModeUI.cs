@@ -2,6 +2,9 @@ using System;
 using System.Collections;
 using System.IO;
 using LookDev;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -92,9 +95,12 @@ public class RenderModeUI : MonoBehaviour
             $"Screenshot_{DateTime.Now.Day}{DateTime.Now.Month}{DateTime.Now.Year}{DateTime.Now.Hour}{DateTime.Now.Minute}{DateTime.Now.Second}.png";
 #if UNITY_EDITOR
         ScreenCapture.CaptureScreenshot($"{ScreencaptureFolder}/{screenshotName}", 2);
+        SceneView.lastActiveSceneView.ShowNotification(
+            new GUIContent($"Screenshot Captured: {fullPath}/{screenshotName}"), 5);
 #else
         ScreenCapture.CaptureScreenshot($"{fullPath}/{screenshotName}", 2);
 #endif
+
         Debug.Log($"Screenshot Captured: {fullPath}/{screenshotName}");
         yield return null;
         uiDocument.rootVisualElement.visible = true;

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -14,15 +13,12 @@ namespace LookDev.Editor
         static Slider _rotationSlider;
         static float _helpUiAspect;
         static int _helpPage;
-        static bool _loadingCameraPosition;
 
         public static bool AutoSaveCameraPosition;
 
         static readonly List<LoadExtensionDelegate> _extensions = new List<LoadExtensionDelegate>();
 
         public delegate bool LoadExtensionDelegate(VisualElement overlayRoot, VisualElement toolbarRoot);
-
-        public static event Action<int> OnCameraPositionLoaded;
 
         public static void RenderExtension(LoadExtensionDelegate loadExtensionMethod)
         {
@@ -33,57 +29,37 @@ namespace LookDev.Editor
         {
             _lookDevPreferences = LookDevPreferences.instance;
             LightingPresetSceneChanger.OnLightSceneChangedEvent += LoadSceneViewOverlay;
-            SceneView.beforeSceneGui += CameraPresetShortcut;
         }
 
         public static void Disable()
         {
             LightingPresetSceneChanger.OnLightSceneChangedEvent -= LoadSceneViewOverlay;
-            SceneView.beforeSceneGui -= CameraPresetShortcut;
         }
 
         public static void Update()
         {
-            if (!_lookDevPreferences.IsCameraLoaded)
+            if (_lookDevPreferences.EnableOrbit)
             {
                 var lookDevCamera = LookDevHelpers.GetLookDevCam();
-                lookDevCamera.OnCreated();
-                LoadCameraPosition(0);
-                _lookDevPreferences.IsCameraLoaded = true;
-            }
-
-            if (_loadingCameraPosition)
-            {
-                _loadingCameraPosition = false;
-            }
-            else if (_lookDevPreferences.EnableOrbit)
-            {
-                var cameraRig = GameObject.FindWithTag("LookDevCam");
-                LookDevHelpers.UpdateRotation(cameraRig.transform, Time.deltaTime, 20f);
-                SceneView sv = SceneView.lastActiveSceneView;
-
-                var driver = CameraSync.instance.GetDriver(sv);
-                driver.targetCamera = cameraRig.gameObject.GetComponentInChildren<Camera>();
-                driver.syncMode = SyncMode.GameViewToSceneView;
-                driver.syncing = true;
+                var lookDevCameraTransform = lookDevCamera.Camera.transform;
+                lookDevCameraTransform.RotateAround(Vector3.zero, new Vector3(0f, 1f, 0f), Time.deltaTime * 20f);
+                LookDevHelpers.CopyCameraTransformToSceneViewCamera(lookDevCamera.Camera,
+                    SceneView.lastActiveSceneView);
             }
             else if (_lookDevPreferences.EnableTurntable)
             {
+                var lookDevCamera = LookDevHelpers.GetLookDevCam();
                 var assetHolder = LookDevHelpers.GetLookDevContainer();
                 LookDevHelpers.UpdateRotation(assetHolder.transform, Time.deltaTime, 20f);
+                LookDevHelpers.CopySceneViewToCameraTransform(SceneView.lastActiveSceneView, lookDevCamera.Camera);
             }
             else
             {
-                SceneView sv = SceneView.lastActiveSceneView;
-                var driver = CameraSync.instance.GetDriver(sv);
-                var lookDevCam = LookDevHelpers.GetLookDevCam();
-                driver.targetCamera = lookDevCam.Camera;
-                driver.syncMode = SyncMode.SceneViewToGameView;
-                driver.syncing = true;
-
+                var lookDevCamera = LookDevHelpers.GetLookDevCam();
+                LookDevHelpers.CopySceneViewToCameraTransform(SceneView.lastActiveSceneView, lookDevCamera.Camera);
                 if (AutoSaveCameraPosition)
                 {
-                    SaveCameraPosition();
+                    LookDevHelpers.SaveCameraPosition();
                 }
             }
 
@@ -145,12 +121,6 @@ namespace LookDev.Editor
                         _lookDevPreferences.EnableTurntable = false;
                         turntableToggle.SetValueWithoutNotify(false);
                     }
-
-                    // When entering orbit, set the camera rig position to the camera position before starting
-                    if (_lookDevPreferences.EnableOrbit)
-                    {
-                        SetCameraRigToCameraPosition();
-                    }
                 });
                 _sceneOverlayRoot.Add(orbitToggle);
 
@@ -164,7 +134,6 @@ namespace LookDev.Editor
                     }
                 });
                 _sceneOverlayRoot.Add(turntableToggle);
-
 
                 var enableGroundPlane = _lookDevPreferences.EnableGroundPlane;
                 var groundPlaneToggle = new Toggle("Show Ground");
@@ -219,13 +188,13 @@ namespace LookDev.Editor
                     {
                         lowValue = 0,
                         highValue = 360,
-                        value = lightRig.StartingSkyRotation
+                        value = 0
                     };
                     _rotationSlider.style.paddingBottom = 8;
                     _rotationSlider.RegisterValueChangedCallback(evt =>
                     {
                         var lightRig = GameObject.FindObjectOfType<ILightRig>();
-                        lightRig.SetRotation(evt.newValue);
+                        lightRig.SetRotation(evt.previousValue, evt.newValue);
                     });
                     _sceneOverlayRoot.Add(new Label("Rotate Light (Shift+Alt+Move)"));
                     _sceneOverlayRoot.Add(_rotationSlider);
@@ -301,100 +270,6 @@ namespace LookDev.Editor
                     if (!extension.Invoke(_sceneOverlayRoot, ToolbarWindow.ToolbarContainer))
                     {
                         Debug.LogError($"Failed to load extension: {extension.Method.Name}");
-                    }
-                }
-            }
-        }
-
-        static void SetCameraRigToCameraPosition()
-        {
-            var cameraRig = GameObject.FindWithTag("LookDevCam");
-            var camera = cameraRig.gameObject.GetComponentInChildren<Camera>();
-            var cameraTransform = camera.transform;
-
-            //Should Orbit Lock the LookAt position to the model?
-            /*
-            var assetHolder = LookDevHelpers.GetLookDevContainer();
-            var bounds = LookDevHelpers.GetBoundsWithChildren(assetHolder);
-            cameraTransform.LookAt(bounds.center);
-            */
-
-            cameraTransform.parent.SetPositionAndRotation(cameraTransform.position, cameraTransform.rotation);
-            cameraTransform.localPosition = Vector3.zero;
-            cameraTransform.localRotation = Quaternion.identity;
-        }
-
-        public static void LoadCameraPosition(int index)
-        {
-            var lookDevCamera = LookDevHelpers.GetLookDevCam();
-
-            SceneView sv = SceneView.lastActiveSceneView;
-            var driver = CameraSync.instance.GetDriver(sv);
-            driver.syncMode = SyncMode.GameViewToSceneView;
-            driver.targetCamera = lookDevCamera.Camera;
-            driver.syncing = true;
-
-            lookDevCamera.LoadCameraPreset(index);
-            _loadingCameraPosition = true;
-
-            OnCameraPositionLoaded?.Invoke(index);
-        }
-
-        public static void SaveCameraPosition()
-        {
-            var sv = SceneView.lastActiveSceneView;
-            var driver = CameraSync.instance.GetDriver(sv);
-            var camera = driver.targetCamera;
-            var lookDevCamera = LookDevHelpers.GetLookDevCam();
-            lookDevCamera.SaveCameraPosition(camera.transform.position, camera.transform.rotation);
-        }
-
-        static void CameraPresetShortcut(SceneView sv)
-        {
-            var current = Event.current;
-            if (current != null && current.type == EventType.KeyDown)
-            {
-                if (EditorWindow.focusedWindow == sv)
-                {
-                    int keyIndex = -1;
-                    switch (Event.current.keyCode)
-                    {
-                        case KeyCode.Alpha1:
-                            keyIndex = 0;
-                            break;
-                        case KeyCode.Alpha2:
-                            keyIndex = 1;
-                            break;
-                        case KeyCode.Alpha3:
-                            keyIndex = 2;
-                            break;
-                        case KeyCode.Alpha4:
-                            keyIndex = 3;
-                            break;
-                        case KeyCode.Alpha5:
-                            keyIndex = 4;
-                            break;
-                        case KeyCode.Alpha6:
-                            keyIndex = 5;
-                            break;
-                        case KeyCode.Alpha7:
-                            keyIndex = 6;
-                            break;
-                        case KeyCode.Alpha8:
-                            keyIndex = 7;
-                            break;
-                        case KeyCode.Alpha9:
-                            keyIndex = 8;
-                            break;
-                        case KeyCode.Alpha0:
-                            keyIndex = 9;
-                            break;
-                    }
-
-                    if (keyIndex > -1)
-                    {
-                        LoadCameraPosition(keyIndex);
-                        current.Use();
                     }
                 }
             }

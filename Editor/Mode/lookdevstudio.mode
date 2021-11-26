@@ -16,12 +16,8 @@ lookdevstudio = {
 			children = 
             [    
                 {
-                    class_name = "CameraToolWindow"
-					size = 0.1
-                }       
-                {
 					class_name = "ToolbarWindow"
-					size = 0.7
+					size = 0.8
                 }
                 {
 					class_name = "ProjectSettingWindow"
@@ -100,14 +96,14 @@ lookdevstudio = {
         {
             name = "File" // Name of the top level menu item
             children = [ // Children of this menu
-				{
-					name = "New LDS Project"
-					command_id = "Commands/New LDS Project"
-				}
-				{
-					name = "Load LDS Project"
-					command_id = "Commands/Load LDS Project"
-				}
+				//{
+				//	name = "New LDS Project"
+				//	command_id = "Commands/New LDS Project"
+				//}
+				//{
+				//	name = "Load LDS Project"
+				//	command_id = "Commands/Load LDS Project"
+				//}
                 { name = "Exit" }
             ]
         }
@@ -121,8 +117,29 @@ lookdevstudio = {
                 { name = "Cycle Debug View Mode" }
                 { name = "Cycle Material Channel Mode" }
                 { name = "Reset Material Debug Mode" }
-                { name = "Import Unity Package" }
+				{ name = "Set Previous Light Preset" }
+				{ name = "Set Next Light Preset" }
+                { name = "Camera/Load Camera 1" }
+                { name = "Camera/Load Camera 2" }
+                { name = "Camera/Load Camera 3" }
+                { name = "Camera/Load Camera 4" }
+                { name = "Camera/Load Camera 5" }
+                { name = "Camera/Save Camera 1" }
+                { name = "Camera/Save Camera 2" }
+                { name = "Camera/Save Camera 3" }
+                { name = "Camera/Save Camera 4" }
+                { name = "Camera/Save Camera 5" }
+                { name = "Tools/View" }
+                { name = "Tools/Move" }
+                { name = "Tools/Rotate" }
+                { name = "Tools/Scale" }
+                { name = "Tools/Rect" }
+                { name = "Tools/Transform" }
             ]
+        }
+        {
+            name = "LookDev Studio DEBUG"
+            children = "*"
         }
 		{
 			name = "GameObject"
@@ -133,14 +150,8 @@ lookdevstudio = {
 					command_id = "Commands/Create Lighting Preset"
 				}
 				{
-					name = "Create Light Group"
-					command_id = "Commands/Create Light Group"
-				}
-				{
-					name = "Set as Main Directional Light"
-					command_id = "Commands/Set as Main Directional Light"
-					//validate_command_id = "Commands/ValidateLightSelected"
-                //shortcut = "&l"
+					name = "Create Light Prefab"
+					command_id = "Commands/Create Light Prefab"
 				}
 				{
 					name = "Save"
@@ -164,12 +175,6 @@ lookdevstudio = {
         {
             name = "Window"
             children = [
-                {
-                    name = "General/Game"
-                }
-//                {
-//                    name = "UI Toolkit/Debugger"
-//                }
                 {
                     name = "Reset View"
                     command_id = "Commands/ResetLookDevView"

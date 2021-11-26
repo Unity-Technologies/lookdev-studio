@@ -28,13 +28,13 @@ namespace LookDev.Editor
             {
                 var cameraButton = rootVisualElement.Q<Button>($"cameraButton{i}");
                 var index = i;
-                cameraButton.clicked += () => { LookDevShortcutsOverlay.LoadCameraPosition(index); };
+                cameraButton.clicked += () => { LookDevHelpers.LoadCameraPosition(index); };
             }
 
             _screenshotButton = rootVisualElement.Q<Button>("ScreenshotButton");
             _screenshotButton.clicked += () =>
             {
-                LookDevHelpers.GetGameview();
+                var gameview = LookDevHelpers.GetGameview();
                 var fullPath = $"{Directory.GetCurrentDirectory()}/{LookDevPreferences.ScreencaptureFolder}";
                 if (!Directory.Exists(fullPath))
                 {
@@ -44,12 +44,17 @@ namespace LookDev.Editor
                 var screenshotName =
                     $"Screenshot_{DateTime.Now.Day}{DateTime.Now.Month}{DateTime.Now.Year}{DateTime.Now.Hour}{DateTime.Now.Minute}{DateTime.Now.Second}.png";
                 ScreenCapture.CaptureScreenshot($"{LookDevPreferences.ScreencaptureFolder}/{screenshotName}", 2);
+                gameview.ShowNotification(new GUIContent($"Screenshot Captured: {fullPath}/{screenshotName}"), 5);
                 Debug.Log($"Screenshot Captured: {fullPath}/{screenshotName}");
             };
 
 
             _saveCameraButton = rootVisualElement.Q<Button>("saveCameraButton");
-            _saveCameraButton.clicked += () => { LookDevShortcutsOverlay.SaveCameraPosition(); };
+            _saveCameraButton.clicked += () =>
+            {
+                LookDevHelpers.SaveCameraPosition();
+                LookDevHelpers.ShowSavedCameraPositionNotification();
+            };
 
             _autoSaveCameraToggle = rootVisualElement.Q<Toggle>("autoSaveCameraToggle");
             _autoSaveCameraToggle.RegisterValueChangedCallback(evt =>
@@ -61,12 +66,12 @@ namespace LookDev.Editor
 
         void OnEnable()
         {
-            LookDevShortcutsOverlay.OnCameraPositionLoaded += OnCameraLoaded;
+            LookDevHelpers.OnCameraPositionLoaded += OnCameraLoaded;
         }
 
         void OnDisable()
         {
-            LookDevShortcutsOverlay.OnCameraPositionLoaded -= OnCameraLoaded;
+            LookDevHelpers.OnCameraPositionLoaded -= OnCameraLoaded;
         }
 
         void OnCameraLoaded(int index)

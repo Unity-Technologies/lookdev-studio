@@ -15,7 +15,7 @@ namespace LookDev.Editor
         {
             createLightGroupWindow = ScriptableObject.CreateInstance<CreateLightGroupWindow>();
 
-            createLightGroupWindow.titleContent = new GUIContent("Create Light Group");
+            createLightGroupWindow.titleContent = new GUIContent("Create Light Prefab");
 
             createLightGroupWindow.position = new Rect(new Vector2(SceneView.lastActiveSceneView.position.x, SceneView.lastActiveSceneView.position.y), new Vector2(300, 100));
 
@@ -35,16 +35,16 @@ namespace LookDev.Editor
 
             GUILayout.BeginHorizontal("Box");
             {
-                GUILayout.Label("Group Name :", GUILayout.Width(80));
+                GUILayout.Label("Prefab Name :", GUILayout.Width(80));
                 lightGroupName = GUILayout.TextField(lightGroupName, GUILayout.Width(200));
             }
             GUILayout.EndHorizontal();
 
-            if (GUILayout.Button("Save Light Group"))
+            if (GUILayout.Button("Save Light Prefab"))
             {
                 if (Selection.gameObjects.Length == 0)
                 {
-                    Debug.LogError("No Selected Lights to be group");
+                    Debug.LogError("No Selected Lights to be Prefab");
                     return;
                 }
 

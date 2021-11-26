@@ -1,7 +1,5 @@
-using UnityEngine;
-using System;
-using Object = UnityEngine.Object;
 using UnityEditor;
+using UnityEngine;
 
 namespace LookDev.Editor
 {
@@ -30,6 +28,7 @@ namespace LookDev.Editor
     {
         [Header("DCC Tools")]
         public MeshDCCs meshDccs;
+
         public string meshDccPath;
 
         public PaintingMeshDCCs paintingMeshDccs;
@@ -47,10 +46,13 @@ namespace LookDev.Editor
         public bool MakePrefabsForAllMeshes;
         public string PrefabPrefix;
         public string PrefabPostfix;
+        public bool AutoGenerateColliders = true;
+        public bool AutoPopulateTextures = true;
 
 
         [Header("Project Folders")]
         public Object importAssetPath;
+
         public Object exportAssetPath;
 
 
@@ -82,6 +84,5 @@ namespace LookDev.Editor
 
             return AssetDatabase.GetAssetPath(obj);
         }
-
     }
 }

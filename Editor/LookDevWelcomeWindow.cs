@@ -4,20 +4,26 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.PackageManager;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UIElements;
-using PackageInfo = UnityEditor.PackageInfo;
 
 namespace LookDev.Editor
 {
     public class LookDevWelcomeWindow : EditorWindow
     {
+#if !DISABLE_LOOKDEV_WELCOME_WINDOW
+        static readonly string _installHdrpButtonName = "InstallHdrpButton";
+        static readonly string _installUrpButtonName = "InstallUrpButton";
+
         static readonly string _installHdrpAssetsButtonName = "InstallHdrpAssetsButton";
         static readonly string _installUrpAssetsButtonName = "InstallUrpAssetsButton";
 
         static readonly string _hdrpPackageAddress = "com.unity.render-pipelines.high-definition";
         static readonly string _urpPackageAddress = "com.unity.render-pipelines.universal";
+
+        static bool _isInstallingAssets;
 
         const string urlTemplate =
             "https://github.com/Unity-Technologies/lookdev-studio/releases/download/v{0}/Extension-{1}.unitypackage";
@@ -116,11 +122,20 @@ namespace LookDev.Editor
             var ui = uxmlTemplate.CloneTree();
             rootVisualElement.Add(ui);
 
+            var installHdrpButton = rootVisualElement.Query<Button>(_installHdrpButtonName).First();
+            installHdrpButton.clicked += () => { InstallPackage(_hdrpPackageAddress); };
+
+            var installUrpButton = rootVisualElement.Query<Button>(_installUrpButtonName).First();
+            installUrpButton.clicked += () => { InstallPackage(_urpPackageAddress); };
+
             var installHdrpAssetsButton = rootVisualElement.Query<Button>(_installHdrpAssetsButtonName).First();
-            installHdrpAssetsButton.clicked += () => { InstallAssets(this, _hdrpPackageAddress, "HDRP"); };
+            installHdrpAssetsButton.clicked += () => { InstallAssets(this, "HDRP"); };
+            installHdrpAssetsButton.SetEnabled(IsPackageInstalled(_hdrpPackageAddress));
 
             var installUrpAssetsButton = rootVisualElement.Query<Button>(_installUrpAssetsButtonName).First();
-            installUrpAssetsButton.clicked += () => { InstallAssets(this, _urpPackageAddress, "URP"); };
+            installUrpAssetsButton.clicked += () => { InstallAssets(this, "URP"); };
+            installUrpAssetsButton.SetEnabled(IsPackageInstalled(_urpPackageAddress));
+
 
             var setupButton = SetupButton;
             setupButton.clicked += () => { Setup(this); };
@@ -133,42 +148,40 @@ namespace LookDev.Editor
 
         static PackageCollection lastQueriedPackageList = null;
 
-        static async Task QueryPackageList()
+        static void InstallPackage(string address)
         {
-            var listRequest = Client.List();
-            while (!listRequest.IsCompleted)
-            {
-                await Task.Delay(1000);
-            }
-
-            lastQueriedPackageList = listRequest.Result;
-        }
-
-        static async Task InstallPackage(string address)
-        {
-            await QueryPackageList();
-
-            if (lastQueriedPackageList.All(x => x.name != address))
+            if (!IsPackageInstalled(address))
             {
                 var addRequest = Client.Add(address);
                 while (!addRequest.IsCompleted)
                 {
-                    Debug.Log($"Installing Package {address}...");
-                    await Task.Delay(1000);
                 }
             }
         }
 
-        static async void InstallAssets(LookDevWelcomeWindow window, string packageAddress,
-            string expectedSourceFolderName)
+        static bool IsPackageInstalled(string address)
         {
-            //EditorApplication.LockReloadAssemblies();
-            await InstallPackage(packageAddress);
-            //EditorApplication.UnlockReloadAssemblies();
+            ListRequest listRequest = Client.List();
+            while (!listRequest.IsCompleted)
+            {
+            }
 
+            lastQueriedPackageList = listRequest.Result;
+            var requestedPackage = listRequest.Result.FirstOrDefault(x => x.name == address);
+
+            return listRequest.Status == StatusCode.Success && requestedPackage != null;
+        }
+
+        static async void InstallAssets(LookDevWelcomeWindow window, string expectedSourceFolderName)
+        {
+            if (_isInstallingAssets)
+                return;
+
+            _isInstallingAssets = true;
 
             if (LookDevPreferences.instance.EnableDeveloperMode)
             {
+                EditorPrefs.SetBool("DirectoryMonitoring", false);
                 string sourceFolderPath = EditorUtility.OpenFolderPanel("Select Folder Source", "", "");
 
                 if (sourceFolderPath == string.Empty)
@@ -238,6 +251,8 @@ namespace LookDev.Editor
                     Debug.LogError($"Download stopped with error: {uwr.downloadHandler.error}");
                 }
             }
+
+            _isInstallingAssets = false;
         }
 
         static void Setup(LookDevWelcomeWindow window)
@@ -252,5 +267,6 @@ namespace LookDev.Editor
         {
             LookDevStudioEditor.EnableLookDev();
         }
+#endif
     }
 }

@@ -6,7 +6,6 @@
                 <ui:VisualElement name="DebugViewDropdownContainer" style="min-width: 300px;" />
             </ui:VisualElement>
             <ui:VisualElement name="MiddleButtonGroup" style="flex-direction: row;" />
-            <ui:Button name="ScreenshotButton" class="screenshotButton" style="background-image: resource(&apos;Icon_CameraRender&apos;); -unity-background-scale-mode: scale-to-fit; visibility: visible;" />
             <ui:VisualElement name="CameraButtonGroup" style="justify-content: center; flex-direction: row; align-items: center;">
                 <ui:Button display-tooltip-when-elided="true" name="cameraButton0" class="cameraButton selectedCameraButton">
                     <ui:Label text="1" display-tooltip-when-elided="true" class="cameraButtonLabel" />
@@ -26,6 +25,7 @@
                 <ui:Button text="Save Cam" display-tooltip-when-elided="true" name="saveCameraButton" style="margin-left: 10px;" />
                 <ui:Label text="Auto Save Cam" display-tooltip-when-elided="true" name="autoSaveCameraToggleLabel" style="width: 110px; -unity-text-align: upper-right;" />
                 <ui:Toggle name="autoSaveCameraToggle" />
+                <ui:Button name="ScreenshotButton" text="Screenshot" class="screenshotButton" style="visibility: visible; margin-left: 30px;" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

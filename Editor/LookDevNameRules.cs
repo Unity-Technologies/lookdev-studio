@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEditor;
 
 namespace LookDev.Editor
 {
@@ -14,8 +15,8 @@ namespace LookDev.Editor
     {
         public static LookDevNameRules nameRuleManager;
 
-        const string nameRuleCsv = "Packages/com.unity.lookdevstudio/Settings/TextureNameRule/LookDevNameConvention.csv";
-
+        //const string nameRuleCsv = "Packages/com.unity.lookdevstudio/Settings/TextureNameRule/LookDevNameConvention.csv";
+        public string nameRuleAsset = "Assets/LookDev/Settings/TextureRule/TextureAutoPopulate.asset";
 
         public List<NameSet> TextureNameSet = new List<NameSet>();
 
@@ -30,26 +31,24 @@ namespace LookDev.Editor
         {
             // Load Texture Name convention
 
-            string csvFullPath = Path.GetFullPath(nameRuleCsv);
+            TexturePopulationRules currentPopulationRule = AssetDatabase.LoadAssetAtPath<TexturePopulationRules>(nameRuleAsset);
 
-            if (File.Exists(csvFullPath))
+            if (currentPopulationRule != null)
             {
                 TextureNameSet.Clear();
 
-                string[] AllLines = File.ReadAllLines(nameRuleCsv);
-
-                foreach (string currentLine in AllLines)
+                foreach (TextureRule currentRule in currentPopulationRule.textureRules)
                 {
-                    string[] tokens = currentLine.Split(',');
-
-                    if (tokens.Length == 1)
+                    if (currentRule.TextureProperty == string.Empty || currentRule.TexturePostfixes == string.Empty)
                         continue;
 
+                    string[] tokens = currentRule.TexturePostfixes.Split(',');
+
                     NameSet nameSet = new NameSet();
-                    nameSet.propertyName = tokens[0].Trim();
+                    nameSet.propertyName = currentRule.TextureProperty.Trim();
                     nameSet.postfixes = new List<string>();
 
-                    for (int i = 1; i < tokens.Length; i++)
+                    for (int i = 0; i < tokens.Length; i++)
                     {
                         string currentPostFix = tokens[i].ToLower().Trim();
 
@@ -62,10 +61,18 @@ namespace LookDev.Editor
                     TextureNameSet.Add(nameSet);
                 }
 
+                /*
+                foreach(NameSet nameSet in TextureNameSet)
+                {
+                    Debug.LogError(nameSet);
+                    foreach (string t in nameSet.postfixes)
+                        Debug.LogWarning(t);
+                }
+                */
             }
             else
             {
-                Debug.LogError($"Could not find CSV : {nameRuleCsv}");
+                Debug.LogError($"Could not find NameRuleAsset : {nameRuleAsset}");
                 return;
             }
         }

@@ -55,7 +55,7 @@ namespace LookDev.Editor
             }
 
             previousFilterName = string.Empty;
-
+            LookDevSearchFilters.Inst.OnChangedFilters();
         }
 
 
@@ -185,8 +185,6 @@ namespace LookDev.Editor
             GUILayout.BeginVertical("Box");
             newFilter.showModel = GUILayout.Toggle(newFilter.showModel, new GUIContent("Show Models", string.Empty));
             newFilter.showPrefab = GUILayout.Toggle(newFilter.showPrefab, new GUIContent("Show Prefabs", string.Empty));
-            newFilter.showLightingPresetScene = GUILayout.Toggle(newFilter.showLightingPresetScene, new GUIContent("Show Lighting Preset Scene", string.Empty));
-            newFilter.showLightingGroup = GUILayout.Toggle(newFilter.showLightingGroup, new GUIContent("Show Lighting Group", string.Empty));
             GUILayout.EndVertical();
 
             EditorGUILayout.Space();
@@ -195,7 +193,10 @@ namespace LookDev.Editor
             if (GUILayout.Button("Save Filter"))
             {
                 LookDevSearchFilters.SaveFilter(newFilter);
-                LookDevSearchFilters.RemovePreviousFilter(previousFilterName);
+
+                if (newFilter.filterName != previousFilterName)
+                    LookDevSearchFilters.RemovePreviousFilter(previousFilterName);
+
                 LookDevSearchFilters.RefreshFilters();
 
                 previousFilterName = string.Empty;

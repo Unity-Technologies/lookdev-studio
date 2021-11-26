@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 #if UNITY_EDITOR
+using System.IO;
 using UnityEditor;
 
 #endif
@@ -46,14 +47,14 @@ namespace LookDev
         {
 #if UNITY_EDITOR
             var lookDevSettingsFolderPath = "LookDevStudioSettings";
-            if (!AssetDatabase.IsValidFolder($"Assets/{lookDevSettingsFolderPath}"))
+            if (!Directory.Exists($"{Application.dataPath}/{lookDevSettingsFolderPath}"))
             {
-                AssetDatabase.CreateFolder("Assets", lookDevSettingsFolderPath);
+                Directory.CreateDirectory($"{Application.dataPath}/{lookDevSettingsFolderPath}");
             }
 
-            if (!AssetDatabase.IsValidFolder($"Assets/{lookDevSettingsFolderPath}/Resources"))
+            if (!Directory.Exists($"{Application.dataPath}/{lookDevSettingsFolderPath}/Resources"))
             {
-                AssetDatabase.CreateFolder($"Assets/{lookDevSettingsFolderPath}", "Resources");
+                Directory.CreateDirectory($"{Application.dataPath}/{lookDevSettingsFolderPath}/Resources");
             }
 
             for (int i = 0; i < NUM_CAMERA_INDICES; ++i)
@@ -88,14 +89,25 @@ namespace LookDev
 
         public void LoadCameraPreset(int index)
         {
+            if (_cameraPreset[index] == null)
+                LoadCameraPresetsFromDisk();
+
             var savedPosition = _cameraPreset[index];
             Camera.transform.SetPositionAndRotation(savedPosition.Position, savedPosition.Rotation);
             _currentCameraIndex = index;
         }
 
-        public void SaveCameraPosition(Vector3 position, Quaternion rotation)
+        public void SaveCameraPosition()
         {
-            _cameraPreset[_currentCameraIndex].SetPositionAndRotation(position, rotation);
+            SaveCameraPosition(_currentCameraIndex);
+        }
+
+        public void SaveCameraPosition(int cameraIndex)
+        {
+            if (_cameraPreset[cameraIndex] == null)
+                LoadCameraPresetsFromDisk();
+
+            _cameraPreset[cameraIndex].SetPositionAndRotation(Camera.transform.position, Camera.transform.rotation);
         }
     }
 }

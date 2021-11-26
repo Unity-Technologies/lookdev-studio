@@ -37,14 +37,14 @@ namespace LookDev.Editor
             dToU.StartServer();
         }
 
-        [MenuItem("DCC Sync/Start Server", false, 20)]
+        //[MenuItem("DCC Sync/Start Server", false, 20)]
         static void RunServerForManualCall()
         {
             RunServer();
         }
 
 
-        [MenuItem("DCC Sync/Send a testing MSG to SERVER", false, 21)]
+        //[MenuItem("DCC Sync/Send a testing MSG to SERVER", false, 21)]
         static void SendMsgAsTest()
         {
             Socket sock = null;
@@ -69,7 +69,7 @@ namespace LookDev.Editor
         }
 
 
-        [MenuItem("DCC Sync/Stop Server", false, 22)]
+        //[MenuItem("DCC Sync/Stop Server", false, 22)]
         static void StopServer()
         {
 
@@ -206,7 +206,7 @@ namespace LookDev.Editor
 
         }
 
-        [MenuItem("DCC Sync/Create a testing Material", false, 40)]
+        //[MenuItem("DCC Sync/Create a testing Material", false, 40)]
         public static void CreateDefaultMaterial()
         {
             CreateMaterial("MyFirstMat");

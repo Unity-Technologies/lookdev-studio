@@ -142,18 +142,17 @@ public static class LightingPresetSceneChanger
             return;
         }
 
-        EditorGUILayout.BeginHorizontal(GUI.skin.box);
+        EditorGUILayout.BeginHorizontal();
 
-        GUILayout.FlexibleSpace();
         GUILayout.Label("Lighting Preset:", GUILayout.Width(100));
-        var newSelection = EditorGUILayout.Popup(m_sceneSelection, sceneNames, GUILayout.Width(200));
+        var newSelection = EditorGUILayout.Popup(m_sceneSelection, sceneNames, GUILayout.Width(170));
         if (newSelection != m_sceneSelection)
         {
             TransitionToScene(scenePaths[newSelection]);
             m_sceneSelection = newSelection;
             SetLastLightingPreset(m_sceneSelection);
         }
-        GUILayout.FlexibleSpace();
+
         EditorGUILayout.EndHorizontal();
     }
     
@@ -253,4 +252,33 @@ public static class LightingPresetSceneChanger
         GameObject.FindGameObjectWithTag("LightRig").hideFlags &= flags;
         GameObject.FindGameObjectWithTag("PostProcess").hideFlags &= flags;
     }
+
+    [MenuItem("LookDev Studio/Set Previous Light Preset _-", editorModes = new[] { "lookdevstudio" })]
+    static void SetPreviousLightPreset()
+    {
+        GetLastLightingPreset(out string _, out string[] sceneNames, out string[] scenePaths);
+
+        if (m_sceneSelection == 0)
+            m_sceneSelection = sceneNames.Length - 1;
+        else
+            m_sceneSelection -= 1;
+
+        TransitionToScene(scenePaths[m_sceneSelection]);
+        SetLastLightingPreset(m_sceneSelection);
+    }
+
+    [MenuItem("LookDev Studio/Set Next Light Preset _=", editorModes = new[] { "lookdevstudio" })]
+    static void SetNextLightPreset()
+    {
+        GetLastLightingPreset(out string _, out string[] sceneNames, out string[] scenePaths);
+
+        if (m_sceneSelection == sceneNames.Length - 1)
+            m_sceneSelection = 0;
+        else
+            m_sceneSelection += 1;
+
+        TransitionToScene(scenePaths[m_sceneSelection]);
+        SetLastLightingPreset(m_sceneSelection);
+    }
+
 }

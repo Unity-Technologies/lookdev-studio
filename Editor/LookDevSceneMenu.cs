@@ -74,7 +74,7 @@ namespace LookDev.Editor
                 menu.AddSeparator("");
 
                 menu.AddItem(new GUIContent("Edit"), false, null);
-                menu.AddItem(new GUIContent("\tNew Material for mesh part(TBD)"), false, null, "menu_1");
+                //menu.AddItem(new GUIContent("\tNew Material for mesh part(TBD)"), false, null, "menu_1");
 
                 if (isRenderObjectSelected)
                 {
@@ -96,16 +96,16 @@ namespace LookDev.Editor
                 if (isRenderObjectSelected)
                 {
                     menu.AddItem(new GUIContent("Tool"), false, null);
-                    menu.AddItem(new GUIContent("\tEdit Pivot(TBD)"), false, null, "menu_1");
-                    menu.AddItem(new GUIContent("\tMake Lods(TBD)"), false, null, "menu_1");
-                    menu.AddItem(new GUIContent("\tMake Collision(TBD)"), false, null, "menu_1");
+                    //menu.AddItem(new GUIContent("\tEdit Pivot(TBD)"), false, null, "menu_1");
+                    //menu.AddItem(new GUIContent("\tMake Lods(TBD)"), false, null, "menu_1");
+                    //menu.AddItem(new GUIContent("\tMake Collision(TBD)"), false, null, "menu_1");
                     menu.AddItem(new GUIContent("\tGo to material"), false, OnOpenAssocatedMaterial, null);
                     menu.AddSeparator("");
 
                     menu.AddItem(new GUIContent("External"), false, null);
-                    menu.AddItem(new GUIContent("\tEdit in DCC(TBD)"), false, null, "menu_1");
-                    menu.AddItem(new GUIContent("\tEdit in Painter(TBD)"), false, null, "menu_1");
-                    menu.AddItem(new GUIContent("\tExport Package(TBD)"), false, null, "menu_1");
+                    menu.AddItem(new GUIContent("\tEdit Mesh in DCC"), false, OnEditMeshinDCC, null);
+                    //menu.AddItem(new GUIContent("\tEdit in Painter(TBD)"), false, null, "menu_1");
+                    //menu.AddItem(new GUIContent("\tExport Package(TBD)"), false, null, "menu_1");
                     menu.AddItem(new GUIContent("\tExport Fbx"), false, OnExportFbxOnSelection, null);
 
                     menu.AddItem(new GUIContent("\tOpen in Explorer"), false, OnOpenInExplorer, null);
@@ -113,16 +113,16 @@ namespace LookDev.Editor
                 else
                 {
                     menu.AddItem(new GUIContent("Tool"), false, null);
-                    menu.AddItem(new GUIContent("\tEdit Pivot(TBD)"), false, null, null);
-                    menu.AddItem(new GUIContent("\tMake Lods(TBD)"), false, null, null);
-                    menu.AddItem(new GUIContent("\tMake Collision(TBD)"), false, null, null);
+                    //menu.AddItem(new GUIContent("\tEdit Pivot(TBD)"), false, null, null);
+                    //menu.AddItem(new GUIContent("\tMake Lods(TBD)"), false, null, null);
+                    //menu.AddItem(new GUIContent("\tMake Collision(TBD)"), false, null, null);
                     menu.AddItem(new GUIContent("\tGo to material"), false, OnOpenAssocatedMaterial, null);
                     menu.AddSeparator("");
 
                     menu.AddItem(new GUIContent("External"), false, null);
-                    menu.AddItem(new GUIContent("\tEdit in DCC(TBD)"), false, null);
-                    menu.AddItem(new GUIContent("\tEdit in Painter(TBD)"), false, null);
-                    menu.AddItem(new GUIContent("\tExport Package(TBD)"), false, null);
+                    menu.AddItem(new GUIContent("\tEdit Mesh in DCC"), false, OnEditMeshinDCC, null);
+                    //menu.AddItem(new GUIContent("\tEdit in Painter(TBD)"), false, null);
+                    //menu.AddItem(new GUIContent("\tExport Package(TBD)"), false, null);
                     menu.AddItem(new GUIContent("\tExport Fbx"), false, null);
                     menu.AddItem(new GUIContent("\tOpen in Explorer"), false, null);
                 }
@@ -146,20 +146,58 @@ namespace LookDev.Editor
                 if (Vector2.Distance(startMousePos, endMousePos) > 1f)
                     return;
 
+                /*
                 GenericMenu menu = new GenericMenu();
 
                 menu.AddItem(new GUIContent("Background Menu"), false, null);
                 menu.AddSeparator("");
 
-                menu.AddItem(new GUIContent("Background Color"), false, null, "menu_1");
+                menu.AddItem(new GUIContent("Background Color(TBD)"), false, null, "menu_1");
                 menu.AddItem(new GUIContent("Show Ground(TBD)"), false, null, "menu_1");
                 menu.AddItem(new GUIContent("Select Hdr(TBD)"), false, null, "menu_1");
                 menu.AddItem(new GUIContent("Show All(TBD)"), false, null, "menu_1");
                 
                 menu.ShowAsContext();
                 Event.current.Use();
+                */
             }
         }
+
+        static void OnEditMeshinDCC(object userData)
+        {
+            if (Selection.activeGameObject != null)
+            {
+                Renderer renderer = Selection.activeGameObject.GetComponent<Renderer>();
+
+                if (renderer == null)
+                    renderer = Selection.activeGameObject.GetComponentInChildren<Renderer>();
+
+                string path = string.Empty;
+
+                if (renderer.GetType() == typeof(SkinnedMeshRenderer))
+                {
+                    SkinnedMeshRenderer skinnedRenderer = renderer as SkinnedMeshRenderer;
+
+                    if (skinnedRenderer.sharedMesh != null)
+                        path = AssetDatabase.GetAssetPath(skinnedRenderer.sharedMesh);
+                }
+                else if (renderer.GetType() == typeof(MeshRenderer))
+                {
+                    MeshFilter meshFilter = renderer.gameObject.GetComponent<MeshFilter>();
+
+                    if (meshFilter.sharedMesh != null)
+                        path = AssetDatabase.GetAssetPath(meshFilter.sharedMesh);
+                }
+
+                if (string.IsNullOrEmpty(path) == false)
+                {
+                    AssetManageHelpers.LoadModelOnDCC(path);
+                }
+            }
+        }
+
+
+
         static void OnMenuClick(object userData)
         {
             EditorUtility.DisplayDialog("Tip", "OnMenuClick" + userData.ToString(), "Ok");

@@ -18,7 +18,10 @@ namespace LookDev.Editor
 
         private static readonly List<string> SupportedFormatExtensions =
             new List<string>() {".fbx", ".obj", ".tga", ".png", ".exr", ".tif", ".tiff", ".psd", ".hdr"};
-        
+
+        private static readonly List<string> SupportedFormatNames =
+            new List<string>() { "FBX", "OBJ", "TGA", "PNG", "EXR", "TIF", "TIFF", "PSD", "HDR" };
+
 
         public const string LookDevSubdirectoryForModel = "LookDev/Models";
         public const string LookDevSubdirectoryForTexture = "LookDev/Textures";
@@ -29,6 +32,7 @@ namespace LookDev.Editor
         public static event Action<string> OnDragAndDropPreImportEvent;
         public static event Action<string> OnDragAndDropPostImportEvent;
         public static event Action OnHeroAssetReplacedEvent;
+        public static event Action<int> OnCameraPositionLoaded;
 
         public static Action<Cubemap> OnSwapHDRi;
         public static Action<Material> OnSwapSkybox;
@@ -55,6 +59,18 @@ namespace LookDev.Editor
             return SupportedFormatExtensions;
         }
 
+        public static List<string> GetSupportedFormatPairs()
+        {
+            List<string> supportedFormatPairs = new List<string>(SupportedFormatExtensions.Count * 2);
+            for (int i = 0; i < supportedFormatPairs.Count; ++i)
+            {
+                supportedFormatPairs.Add(SupportedFormatNames[i]);
+                supportedFormatPairs.Add(SupportedFormatExtensions[i]);
+            }
+
+            return supportedFormatPairs;
+        }
+
         public static void ReplaceHeroAsset(GameObject target)
         {
             SetHeroAsset(target);
@@ -62,35 +78,6 @@ namespace LookDev.Editor
             RecordLastHeroAsset(target);
         }
 
-        public static LookDevCamera GetLookDevCam()
-        {
-            var lookDevCameras = GameObject.FindObjectsOfType<LookDevCamera>();
-            if (lookDevCameras.Length == 0)
-            {
-                var lookDevCameraGo = GameObject.FindWithTag("LookDevCam");
-                if (lookDevCameraGo == null)
-                {
-                    lookDevCameraGo = GameObject.FindObjectOfType<Camera>().gameObject;
-                }
-                
-                var lookDevCamera = lookDevCameraGo.AddComponent<LookDevCamera>();
-                lookDevCamera.OnCreated();
-                
-                lookDevCameras = new[] { lookDevCamera };
-            }
-
-            foreach (var cam in lookDevCameras)
-            {
-                if (cam.Camera.CompareTag("MainCamera"))
-                {
-                    return cam;
-                }
-            }
-
-            Debug.Assert(false, "No lookdev cam exists in the scene");
-
-            return null;
-        }
 
         public static bool GetGroundPlane(out GameObject groundPlane)
         {
@@ -107,6 +94,7 @@ namespace LookDev.Editor
         {
             return GameObject.FindWithTag("LightRig");
         }
+
         public static GameObject GetLookDevContainer(Scene correspondingScene)
         {
             foreach (GameObject GO in correspondingScene.GetRootGameObjects())
@@ -114,7 +102,7 @@ namespace LookDev.Editor
                 if (GO.tag.Equals("AssetHolder"))
                     return GO;
             }
-            
+
             return null;
         }
 
@@ -141,7 +129,7 @@ namespace LookDev.Editor
             var container = GetLookDevContainer();
             if (container == null) //NOTE: The first time the project loads container comes back null
                 return null;
-            
+
             for (int i = container.transform.childCount - 1; i >= 0; i--)
             {
                 GameObject.DestroyImmediate(container.transform.GetChild(i).gameObject);
@@ -168,39 +156,6 @@ namespace LookDev.Editor
             }
 
             return o;
-        }
-
-        public static void ResetLookDevCamera(GameObject basis = null)
-        {
-            if (basis == null)
-            {
-                basis = GetLookDevContainer();
-
-                // Try to get the loaded model, if available.
-                if (basis.transform.childCount > 0)
-                    basis = basis.transform.GetChild(0).gameObject;
-            }
-
-            var vCam = GetLookDevCam();
-            float resetDist = CalculateMinimumDistance(vCam.Camera, basis, out Vector3 centroid);
-
-            //Turntable.Controls.Reset(resetDist);
-            //Turntable.Controls.Origin = centroid;
-            vCam.transform.position = centroid + Vector3.forward * resetDist;
-
-            SceneView sv = SceneView.lastActiveSceneView;
-            sv.Frame(GetBoundsWithChildren(basis));
-        }
-
-        private static float CalculateMinimumDistance(Camera vCam, GameObject basis, out Vector3 centroidWorldPos)
-        {
-            // https://forum.unity.com/threads/fit-object-exactly-into-perspective-cameras-field-of-view-focus-the-object.496472/
-            Bounds b = GetBoundsWithChildren(basis);
-            centroidWorldPos = b.center;
-            const float marginPercentage = 0.8f;
-            float maxExtent = b.extents.magnitude;
-            float minDistance = (maxExtent * marginPercentage) / Mathf.Sin(Mathf.Deg2Rad * vCam.fieldOfView / 2f);
-            return minDistance;
         }
 
         public static Bounds GetBoundsWithChildren(GameObject gameObject)
@@ -281,7 +236,8 @@ namespace LookDev.Editor
 
         static bool IsLightPrefab(Object obj)
         {
-            if (PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.MissingAsset && PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.NotAPrefab)
+            if (PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.MissingAsset &&
+                PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.NotAPrefab)
             {
                 string assetPath = AssetDatabase.GetAssetPath(obj);
 
@@ -323,10 +279,10 @@ namespace LookDev.Editor
 
                 if (castShadowCount > 1)
                 {
-                    Debug.LogWarning("You can only have shadows on one directional light. The second one will have shadows disabled.");
+                    Debug.LogWarning(
+                        "You can only have shadows on one directional light. The second one will have shadows disabled.");
                     return false;
                 }
-
             }
 
             return true;
@@ -348,6 +304,7 @@ namespace LookDev.Editor
                     }
                 }
             }
+
             return noShadowCasting;
         }
 
@@ -397,7 +354,8 @@ namespace LookDev.Editor
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
 
                 if (IsDraggedObjectModel())
-                    Event.current.Use(); // Hides the ScenView's raycast-snap model preview. but want to see the preview when the material is dragged
+                    Event.current
+                        .Use(); // Hides the ScenView's raycast-snap model preview. but want to see the preview when the material is dragged
             }
             else if (Event.current.type == EventType.DragPerform)
             {
@@ -415,7 +373,6 @@ namespace LookDev.Editor
                             LightingPresetSceneChanger.TransitionToScene(scenePath);
                             int currentLightIndex = LightingPresetSceneChanger.GetLightSceneIndex(scenePath);
                             LightingPresetSceneChanger.SetLightSceneIndex(currentLightIndex);
-
                         }
                         else if (IsHdri(obj)) // if it's Hdri
                         {
@@ -433,13 +390,16 @@ namespace LookDev.Editor
                             var instantiatedLgtObject = PrefabUtility.InstantiatePrefab(obj, lightHolder);
 
                             GameObject instantiatedLgtGo = instantiatedLgtObject as GameObject;
-                            instantiatedLgtGo.transform.position = new Vector3(0f, 2f, 0f);
+
+                            Vector3 initPos = (obj as GameObject).transform.position;
+
+                            instantiatedLgtGo.transform.position = initPos;
 
                             if (ValidateDirectionalLights() == false)
                                 DisableCastShadow(instantiatedLgtGo);
                             else if (CheckNoShadowCasting() == true)
                                 EnableCastShadow(instantiatedLgtGo);
-                            
+
                             Selection.SetActiveObjectWithContext(instantiatedLgtObject, null);
                         }
                         else if (IsAnimationClip(obj))
@@ -451,9 +411,9 @@ namespace LookDev.Editor
                             AnimationTool.LoadAnimation(obj as AnimationClip);
 
                             AnimationTool.PlayAnimator();
-
                         }
-                        else if (PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.NotAPrefab && PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.MissingAsset)
+                        else if (PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.NotAPrefab &&
+                                 PrefabUtility.GetPrefabAssetType(obj) != PrefabAssetType.MissingAsset)
                         {
                             Transform assetHolder = GetLookDevContainer().transform;
                             var instantiatedObject = PrefabUtility.InstantiatePrefab(obj);
@@ -465,51 +425,20 @@ namespace LookDev.Editor
                             Selection.SetActiveObjectWithContext(instantiatedObject, null);
                             SceneView.lastActiveSceneView.FrameSelected();
 
-                            if (ProjectSettingWindow.projectSetting.MakePrefabsForAllMeshes && PrefabUtility.GetPrefabAssetType(obj) == PrefabAssetType.Model)
-                            {
-                                string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(target);
-
-                                string savePath = $"{assetPath.Replace(Path.GetExtension(assetPath), string.Empty)}.prefab";
-
-                                if (Path.GetFileName(savePath).ToUpper().StartsWith(ProjectSettingWindow.projectSetting.PrefabPrefix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPrefix.Trim() != string.Empty)
-                                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{ProjectSettingWindow.projectSetting.PrefabPrefix}{Path.GetFileNameWithoutExtension(savePath)}.prefab");
-
-                                if (Path.GetFileName(savePath).ToUpper().EndsWith(ProjectSettingWindow.projectSetting.PrefabPostfix.ToUpper()) == false && ProjectSettingWindow.projectSetting.PrefabPostfix.Trim() != string.Empty)
-                                    savePath = savePath.Replace(Path.GetFileName(savePath), $"{Path.GetFileNameWithoutExtension(savePath)}{ProjectSettingWindow.projectSetting.PrefabPostfix}.prefab");
-
-                                if (string.IsNullOrEmpty(assetPath) == false)
-                                {
-                                    if (AssetDatabase.LoadAssetAtPath<Object>(savePath))
-                                        return;
-
-                                    if (EditorUtility.DisplayDialog("Make Prefab", "Do you want to automatically generate a Prefab from the selected Model latestly?", "Yes", "No"))
-                                    {
-                                            
-
-                                        target.name = Path.GetFileNameWithoutExtension(savePath);
-
-                                        PrefabUtility.SaveAsPrefabAssetAndConnect(target, savePath, InteractionMode.AutomatedAction);
-
-                                        if (SceneView.lastActiveSceneView != null)
-                                            SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Prefab Saved : {savePath}"), 4f);
-
-                                        LookDevSearchHelpers.SwitchCurrentProvider(2);
-                                    }
-                                }
-                                
-                            }
                         }
                         else
                         {
                             Transform assetHolder = GetLookDevContainer().transform;
-                            var instantiatedObject = Object.Instantiate(obj, Vector3.zero, Quaternion.identity, assetHolder);
+                            var instantiatedObject =
+                                Object.Instantiate(obj, Vector3.zero, Quaternion.identity, assetHolder);
                             Selection.SetActiveObjectWithContext(instantiatedObject, null);
                             SceneView.lastActiveSceneView.FrameSelected();
                         }
                     }
 
                     if (IsDraggedObjectModel())
-                        Event.current.Use(); // Consumes the event to prevent downstream errors with the Editor's core DragDrop logic.
+                        Event.current
+                            .Use(); // Consumes the event to prevent downstream errors with the Editor's core DragDrop logic.
                 }
                 // Object outside project. It mays from File Explorer (Finder in OSX).
                 else if (DragAndDrop.paths.Length > 0 && DragAndDrop.objectReferences.Length == 0)
@@ -526,7 +455,8 @@ namespace LookDev.Editor
                         {
                             foreach (string SupportedFormatExtension in SupportedFormatExtensions)
                             {
-                                string[] files = Directory.GetFiles(path, $"*{SupportedFormatExtension}", SearchOption.AllDirectories);
+                                string[] files = Directory.GetFiles(path, $"*{SupportedFormatExtension}",
+                                    SearchOption.AllDirectories);
 
                                 foreach (string file in files)
                                     fullAssetList.Add(file);
@@ -608,79 +538,86 @@ namespace LookDev.Editor
 
             // You can use StartAssetEditing() and StopAssetEditing(), to group any imports that happen inbetween:
             // This will speed up import considerably, when importing a large number of assets.
-            AssetDatabase.StartAssetEditing();
-
-            foreach (string sourcePath in paths)
+            try
             {
-                var sourceFile = new FileInfo(sourcePath);
-                // Ignore invalid paths
-                if (!sourceFile.Exists)
+                AssetDatabase.StartAssetEditing();
+
+                foreach (string sourcePath in paths)
                 {
-                    continue;
+                    var sourceFile = new FileInfo(sourcePath);
+                    // Ignore invalid paths
+                    if (!sourceFile.Exists)
+                    {
+                        continue;
+                    }
+
+                    if (!IsSupportedExtension(sourceFile.Extension))
+                    {
+                        Debug.LogError($"Files with extension [{sourceFile.Extension}] are not supported.");
+                        continue;
+                    }
+
+                    // Path to import file to, in the Assets root directory
+
+                    string assetPath = string.Empty;
+                    string assetDir = string.Empty;
+
+                    if (IsModel(sourceFile.Extension)) // Model
+                    {
+                        assetPath = Path.Combine("Assets/", LookDevSubdirectoryForModel, Path.GetFileName(sourcePath));
+                        foundModel = true;
+                    }
+                    else // Texture
+                    {
+                        /*
+                        if (IsHdri(sourceFile.Extension))
+                            assetPath = Path.Combine("Assets/", LookDevSubdirectoryForHdri, Path.GetFileName(sourcePath));
+                        */
+
+                    	assetPath = Path.Combine("Assets/", LookDevSubdirectoryForTexture, Path.GetFileName(sourcePath));
+                    }
+
+                    // Normalize path separators due to differing operating systems.
+                    assetPath = assetPath.Replace('\\', '/');
+
+                    assetDir = assetPath.Replace(Path.GetFileName(assetPath), string.Empty);
+
+
+                    // Check Directory existence
+                    if (!Directory.Exists(assetDir))
+                    {
+                        Directory.CreateDirectory(assetDir);
+                    }
+
+                    // Copy the file from the source path to the target asset path
+                    sourceFile.CopyTo(assetPath, true);
+
+                    // Notify we are about to import a specific path
+                    OnDragAndDropPreImportEvent?.Invoke(assetPath);
+
+                    // Manually trigger an import for the new asset
+                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+
+                    // Notify we have finalized a single specific import
+                    OnDragAndDropPostImportEvent?.Invoke(assetPath);
+
+                    // Collect the import paths.
+                    imports.Add(assetPath);
                 }
-
-                if (!IsSupportedExtension(sourceFile.Extension))
-                {
-                    Debug.LogError($"Files with extension [{sourceFile.Extension}] are not supported.");
-                    continue;
-                }
-
-                // Path to import file to, in the Assets root directory
-
-                string assetPath = string.Empty;
-                string assetDir = string.Empty;
-
-                if (IsModel(sourceFile.Extension)) // Model
-                {
-                    assetPath = Path.Combine("Assets/", LookDevSubdirectoryForModel, Path.GetFileName(sourcePath));
-                    foundModel = true;
-                }
-                else // Texture
-                {
-                    /*
-                    if (IsHdri(sourceFile.Extension))
-                        assetPath = Path.Combine("Assets/", LookDevSubdirectoryForHdri, Path.GetFileName(sourcePath));
-                    */
-
-                    assetPath = Path.Combine("Assets/", LookDevSubdirectoryForTexture, Path.GetFileName(sourcePath));
-                }
-
-                // Normalize path separators due to differing operating systems.
-                assetPath = assetPath.Replace('\\', '/');
-
-                assetDir = assetPath.Replace(Path.GetFileName(assetPath), string.Empty);
-
-
-                // Check Directory existence
-                if (!Directory.Exists(assetDir))
-                {
-                    Directory.CreateDirectory(assetDir);
-                }
-
-                // Copy the file from the source path to the target asset path
-                sourceFile.CopyTo(assetPath, true);
-
-                // Notify we are about to import a specific path
-                OnDragAndDropPreImportEvent?.Invoke(assetPath);
-
-                // Manually trigger an import for the new asset
-                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
-
-                // Notify we have finalized a single specific import
-                OnDragAndDropPostImportEvent?.Invoke(assetPath);
-
-                // Collect the import paths.
-                imports.Add(assetPath);
             }
-
-            AssetDatabase.StopAssetEditing();
-
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
 
             if (foundModel && DragDropModelPostProcessor.latestImportedAssets.Count != 0)
             {
+                /*
                 if (EditorUtility.DisplayDialog("Material set-up",
                     $"Do you want to open the Texture Allocator to set up materials now?\nThe total number of imported Assets is: {DragDropModelPostProcessor.latestImportedAssets.Count.ToString()}, including newly generated Materials.",
                     "Yes", "No"))
+                    */
+                if (ProjectSettingWindow.projectSetting.AutoPopulateTextures == true)
                 {
                     EditorCoroutineUtility.StartCoroutine(
                         TextureLinkBrowser.Inst.InitTextureLinkBrowserOnImportingWithDelay(), TextureLinkBrowser.Inst);
@@ -720,6 +657,175 @@ namespace LookDev.Editor
         {
             var rotation = Quaternion.AngleAxis(speed * deltaTime, Vector3.up);
             t.rotation *= rotation;
+        }
+
+        #region Camera
+
+        public static void ResetLookDevCamera(GameObject basis = null)
+        {
+            if (basis == null)
+            {
+                basis = GetLookDevContainer();
+            }
+
+            var vCam = GetLookDevCam();
+            float resetDist = CalculateMinimumDistance(vCam.Camera, basis, out Vector3 centroid);
+
+            vCam.Camera.transform.position = centroid + Vector3.forward * resetDist;
+
+            SceneView sv = SceneView.lastActiveSceneView;
+            sv.Frame(GetBoundsWithChildren(basis));
+        }
+
+        static float CalculateMinimumDistance(Camera vCam, GameObject basis, out Vector3 centroidWorldPos)
+        {
+            // https://forum.unity.com/threads/fit-object-exactly-into-perspective-cameras-field-of-view-focus-the-object.496472/
+            Bounds b = GetBoundsWithChildren(basis);
+            centroidWorldPos = b.center;
+            const float marginPercentage = 0.8f;
+            float maxExtent = b.extents.magnitude;
+            float minDistance = (maxExtent * marginPercentage) / Mathf.Sin(Mathf.Deg2Rad * vCam.fieldOfView / 2f);
+            return minDistance;
+        }
+
+        public static LookDevCamera GetLookDevCam()
+        {
+            var lookDevCameras = GameObject.FindObjectsOfType<LookDevCamera>();
+            foreach (var cam in lookDevCameras)
+            {
+                if (cam.Camera.CompareTag("MainCamera"))
+                {
+                    return cam;
+                }
+            }
+
+            Debug.Assert(false, "No lookdev cam exists in the scene");
+
+            return null;
+        }
+
+        public static void CopyCameraTransformToSceneViewCamera(Camera camera, SceneView sceneView)
+        {
+            const float kSqrt2 = 1.41421356f;
+
+            var sceneViewAspect = sceneView.camera.aspect;
+
+            var hFov = Camera.VerticalToHorizontalFieldOfView(camera.fieldOfView, camera.aspect);
+            var vFov = Camera.HorizontalToVerticalFieldOfView(hFov, sceneViewAspect);
+
+            sceneView.camera.fieldOfView = vFov;
+            var cameraTransform = camera.transform;
+
+            var newSize = 0.0f;
+            if (camera.orthographic)
+                newSize = (camera.aspect > sceneViewAspect ? camera.aspect / sceneViewAspect : 1.0f) *
+                          kSqrt2 * Mathf.Sqrt(sceneViewAspect) * camera.orthographicSize;
+            sceneView.LookAt(cameraTransform.position, cameraTransform.rotation, newSize, false, true);
+        }
+
+        public static void CopySceneViewToCameraTransform(SceneView sceneView, Camera camera)
+        {
+            var targetCameraTransform = camera.transform;
+            var sceneViewCameraTransform = sceneView.camera.transform;
+            targetCameraTransform.position = sceneViewCameraTransform.position;
+            targetCameraTransform.rotation = sceneViewCameraTransform.rotation;
+            camera.orthographic = sceneView.camera.orthographic;
+            camera.orthographicSize = sceneView.camera.orthographicSize;
+
+            var sceneViewAspect = sceneView.camera.aspect;
+            var hFov = Camera.VerticalToHorizontalFieldOfView(sceneView.camera.fieldOfView, sceneViewAspect);
+            var vFov = Camera.HorizontalToVerticalFieldOfView(hFov, camera.aspect);
+            camera.fieldOfView = vFov;
+        }
+
+        public static void LoadCameraPosition(int index)
+        {
+            var lookDevCamera = GetLookDevCam();
+            lookDevCamera.LoadCameraPreset(index);
+            CopyCameraTransformToSceneViewCamera(lookDevCamera.Camera, SceneView.lastActiveSceneView);
+            OnCameraPositionLoaded?.Invoke(index);
+        }
+
+        public static void SaveCameraPosition(int cameraIndex = -1)
+        {
+            var lookDevCamera = GetLookDevCam();
+            if (cameraIndex == -1)
+            {
+                lookDevCamera.SaveCameraPosition();
+            }
+            else
+            {
+                lookDevCamera.SaveCameraPosition(cameraIndex);
+            }
+        }
+
+        public static void ShowSavedCameraPositionNotification(int index = -1)
+        {
+            if (index == -1)
+            {
+                index = GetLookDevCam().CurrentCameraIndex + 1;
+            }
+
+            SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Saved Camera {index} Position"), 2);
+        }
+
+        #endregion
+
+        #region ToolMode
+
+        public static void SetToolMode(Tool toolMode)
+        {
+            var unityEditorAssembly = typeof(EditorWindow).Assembly;
+            Type toolbarType = unityEditorAssembly.GetType("UnityEditor.Toolbar");
+            Type toolsType = unityEditorAssembly.GetType("UnityEditor.Tools");
+
+            var repaintToolbarMethodInfo =
+                toolbarType.GetMethod("RepaintToolbar", BindingFlags.Static | BindingFlags.NonPublic);
+            var resetGlobalHandleRotationMethodInfo = toolsType.GetMethod("ResetGlobalHandleRotation",
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+            Tools.current = toolMode;
+            repaintToolbarMethodInfo.Invoke(null, new object[] { });
+            resetGlobalHandleRotationMethodInfo.Invoke(null, new object[] { });
+        }
+
+        #endregion
+
+        public static Rect GetMainWindowRect()
+        {
+            Assembly assembly = typeof(EditorWindow).Assembly;
+            Type type = assembly.GetType("UnityEditor.ContainerWindow");
+            FieldInfo pixelRectField = type.GetField("m_PixelRect", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo showModeField = type.GetField("m_ShowMode", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            foreach (var containerWindow in Resources.FindObjectsOfTypeAll(type))
+            {
+                int showMode = (int)showModeField.GetValue(containerWindow);
+                if (showMode == 4)
+                {
+                    return (Rect)pixelRectField.GetValue(containerWindow);
+                }
+            }
+
+            Debug.LogError("LookDevHelpers GetMainWindowRect: MainWindow not found");
+            return new Rect(-1, -1, -1, -1);
+        }
+
+        public static void SetMainWindowRect(Rect rect)
+        {
+            Assembly assembly = typeof(EditorWindow).Assembly;
+            Type type = assembly.GetType("UnityEditor.ContainerWindow");
+            FieldInfo showModeField = type.GetField("m_ShowMode", BindingFlags.Instance | BindingFlags.NonPublic);
+            PropertyInfo positionProperty = type.GetProperty("position", BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var containerWindow in Resources.FindObjectsOfTypeAll(type))
+            {
+                int showMode = (int)showModeField.GetValue(containerWindow);
+                if (showMode == 4)
+                {
+                    positionProperty.SetValue(containerWindow, rect);
+                }
+            }
         }
     }
 }

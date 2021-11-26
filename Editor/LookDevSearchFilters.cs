@@ -33,8 +33,6 @@ namespace LookDev.Editor
 
         public bool showPrefab = true;
         public bool showModel = true;
-        public bool showLightingPresetScene = true;
-        public bool showLightingGroup = true;
 
         public LookDevFilter()
         {
@@ -52,8 +50,6 @@ namespace LookDev.Editor
 
             showPrefab = false;
             showModel = false;
-            showLightingPresetScene = false;
-            showLightingGroup = false;
         }
     }
 
@@ -74,6 +70,11 @@ namespace LookDev.Editor
 
         CreateNewFilterWindow createNewFilterWindow;
 
+
+        public static LookDevSearchFilters Inst
+        {
+            get { return EditorWindow.GetWindow<LookDevSearchFilters>(); }
+        }
 
         public static void AddFilter(LookDevFilter lookDevFilter)
         {
@@ -246,10 +247,14 @@ namespace LookDev.Editor
         {
             globalFilter = new LookDevFilter();
 
+            int enableCount = 0;
+
             foreach (KeyValuePair<string, LookDevFilter> keyValuePair in filters)
             {
                 if (keyValuePair.Value.enabled)
                 {
+                    enableCount++;
+
                     // Material
                     foreach (string path in keyValuePair.Value.pathForMaterial)
                     {
@@ -342,14 +347,18 @@ namespace LookDev.Editor
 
                     globalFilter.showPrefab = globalFilter.showPrefab | keyValuePair.Value.showPrefab;
                     globalFilter.showModel = globalFilter.showModel | keyValuePair.Value.showModel;
-                    globalFilter.showLightingPresetScene = globalFilter.showLightingPresetScene | keyValuePair.Value.showLightingPresetScene;
-                    globalFilter.showLightingGroup = globalFilter.showLightingGroup | keyValuePair.Value.showLightingGroup;
 
                 }
                 else
                 {
 
                 }
+            }
+
+            if (enableCount == 0)
+            {
+                globalFilter.showPrefab = true;
+                globalFilter.showModel = true;
             }
 
             return globalFilter;
@@ -672,8 +681,6 @@ namespace LookDev.Editor
             SearchProviderForModels.showModel = gfilter.showModel;
             SearchProviderForModels.showPrefab = gfilter.showPrefab;
 
-            SearchProviderForLight.showLightingPresetScene = gfilter.showLightingPresetScene;
-            SearchProviderForLight.showLightingGroup = gfilter.showLightingGroup;
 
             // Skybox(HDRi)
             SetAssetsFolders?.Invoke(gfilter.paths.ToArray());
@@ -773,8 +780,6 @@ namespace LookDev.Editor
 
                 createNewFilterWindow.GetFilter().showModel = true;
                 createNewFilterWindow.GetFilter().showPrefab = true;
-                createNewFilterWindow.GetFilter().showLightingGroup = true;
-                createNewFilterWindow.GetFilter().showLightingPresetScene = true;
 
                 //createNewFilterWindow.ShowModalUtility();
                 createNewFilterWindow.ShowAuxWindow();

@@ -69,7 +69,9 @@ namespace LookDev.Editor
                 Object genMaterial = AssetManageHelpers.CreateMaterialByPresetName(defaultShader.name, System.IO.Path.GetFileNameWithoutExtension(defaultShader.name));
             }
             else
-                Debug.LogWarning("Default shader is null. please check the LDS project setting.");
+            {
+                AssetManageHelpers.CreateDefaultMaterial();
+            }
 
         }
 
@@ -111,8 +113,10 @@ namespace LookDev.Editor
         
         public override Vector2 GetWindowSize()
         {
-            return new Vector2(115, 150);
-            //return new Vector2(360, 150);
+            if (LookDevStudioEditor.IsHDRP())
+                return new Vector2(115, 150);
+            else
+                return new Vector2(115, 70);
         }
         
     }

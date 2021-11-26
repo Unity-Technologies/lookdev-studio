@@ -33,14 +33,42 @@ namespace LookDev.Editor
             string newAssetPath = string.Format("Assets/{0}/{1}.mat", LookDevHelpers.LookDevSubdirectoryForMaterial, defaultMaterialName);
             newAssetPath = AssetDatabase.GenerateUniqueAssetPath(newAssetPath);
 
-            Material newMaterial = new Material(GetDefaultLitShader?.Invoke());
+            bool userCustomized = false;
+            Shader defaultShader;
+
+            if (ProjectSettingWindow.projectSetting != null)
+            {
+                if (ProjectSettingWindow.projectSetting.defaultShader != null)
+                {
+                    defaultShader = ProjectSettingWindow.projectSetting.defaultShader;
+                    userCustomized = true;
+                }
+                else
+                    defaultShader = GetDefaultLitShader?.Invoke();
+            }
+            else
+                defaultShader = GetDefaultLitShader?.Invoke();
+
+            if (defaultShader == null)
+            {
+                Debug.LogError("Could not find the default shader in the Setting.");
+                return;
+            }
+
+            Material newMaterial = new Material(defaultShader);
 
             AssetDatabase.CreateAsset(newMaterial, newAssetPath);
 
             // Apply preset
-            Preset opaquePreset = AssetDatabase.LoadAssetAtPath<Preset>("Assets/LookDev/Setup/Settings/MaterialPreset/Opaque.preset");
+            Preset opaquePreset;
+            
+            if (LookDevStudioEditor.IsHDRP())
+                opaquePreset = AssetDatabase.LoadAssetAtPath<Preset>("Assets/LookDev/Setup/Settings/MaterialPreset/Opaque.preset");
+            else
+                opaquePreset = AssetDatabase.LoadAssetAtPath<Preset>("Assets/LookDev/Setup/Settings/MaterialPreset/Lit.preset");
 
-            if (opaquePreset != null)
+
+            if (opaquePreset != null && opaquePreset.IsValid() && userCustomized == false)
             {
                 Object target = AssetDatabase.LoadAssetAtPath<Object>(newAssetPath);
 
@@ -48,11 +76,11 @@ namespace LookDev.Editor
                 {
                     opaquePreset.ApplyTo(target);
                     Selection.activeObject = target;
-
-                    if (SceneView.lastActiveSceneView != null)
-                        SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"New Material Generated : {target.name}"), 4f);
                 }
             }
+
+            if (SceneView.lastActiveSceneView != null)
+                SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"New Material Generated : {Path.GetFileNameWithoutExtension(newAssetPath)}"), 4f);
 
         }
 
@@ -132,6 +160,21 @@ namespace LookDev.Editor
             if (targetMaterial != null)
             {
                 targetMaterial.shader = GetDefaultLitShader?.Invoke();
+
+                // Apply Preset
+                Preset opaquePreset;
+
+                if (LookDevStudioEditor.IsHDRP())
+                    opaquePreset = AssetDatabase.LoadAssetAtPath<Preset>("Assets/LookDev/Setup/Settings/MaterialPreset/Opaque.preset");
+                else
+                    opaquePreset = AssetDatabase.LoadAssetAtPath<Preset>("Assets/LookDev/Setup/Settings/MaterialPreset/Lit.preset");
+
+
+                if (opaquePreset != null && opaquePreset.IsValid())
+                {
+                    opaquePreset.ApplyTo(targetMaterial);
+                }
+
             }
         }
 
@@ -187,6 +230,29 @@ namespace LookDev.Editor
             }
         }
 
+        static public void LoadModelOnDCC(string path)
+        {
+
+            if (AssetDatabase.LoadAssetAtPath<Object>(path) == null)
+                return;
+
+            switch (ProjectSettingWindow.projectSetting.meshDccs)
+            {
+                case MeshDCCs.Maya:
+                    AssetManageHelpers.LoadModelOnDCC(path, DCCType.MAYA);
+                    break;
+
+                case MeshDCCs.Max:
+                    AssetManageHelpers.LoadModelOnDCC(path, DCCType.MAX);
+                    break;
+
+                    /*
+                    case MeshDCCs.Blender:
+                        AssetManageHelpers.LoadModelOnDCC(item.id, DCCType.BLENDER);
+                        break;
+                    */
+            }
+        }
 
         static public void LoadModelOnDCC(string path, DCCType dccType)
         {
@@ -329,7 +395,11 @@ namespace LookDev.Editor
 
             try
             {
+                #if !UNITY_EDITOR_OSX
                 paths = StandaloneFileBrowser.OpenFilePanel("Select the target files to be imported", previousOpendFolder, new ExtensionFilter[] { filter }, true);
+                #else
+                paths[0] = EditorUtility.OpenFilePanelWithFilters("Select the target files to be imported", previousOpendFolder, LookDevHelpers.GetSupportedFormatPairs().ToArray());
+                #endif
             }
             catch (System.Exception ex)
             {
@@ -421,7 +491,10 @@ namespace LookDev.Editor
         static public void ApplyPresetToObject(string presetPath, Object target)
         {
             if (target == null)
+            {
+                Debug.LogError("Could not find the target object for applying the preset.");
                 return;
+            }
 
             Preset inPreset = AssetDatabase.LoadAssetAtPath<Preset>(presetPath);
 
@@ -433,9 +506,17 @@ namespace LookDev.Editor
                     if (target.GetType() == typeof(TextureImporter))
                         (target as TextureImporter).SaveAndReimport();
                 }
+                else
+                {
+                    Debug.LogError("Could not apply the preset to the target.");
+                    Debug.Log($"\tTarget : {target}");
+                    Debug.Log($"\tTarget Path : {AssetDatabase.GetAssetPath(target)}");
+                    Debug.Log($"\tTarget Type : {target.GetType()}");
+                }
             }
             else
                 Debug.LogError($"Could not fine the Preset : {presetPath}");
+
         }
 
 
@@ -476,10 +557,16 @@ namespace LookDev.Editor
                         else
                             AssetDatabase.MoveAsset(assetPath, $"{hdriDefault[0]}/{Path.GetFileName(assetPath)}");
 
+
                         LookDevSearchHelpers.SwitchCurrentProvider(5);
 
                         if (SceneView.lastActiveSceneView != null)
                             SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Asset Switched :\n {Path.GetFileNameWithoutExtension(assetPath)}"), 4f);
+                    }
+                    else
+                    {
+                        Debug.LogError("Could not apply the Preset to the target.");
+                        Debug.Log($"\tTarget Path : {assetPath}");
                     }
                 }
             }
@@ -582,27 +669,34 @@ namespace LookDev.Editor
 
             string assetPath = AssetDatabase.GetAssetPath(Selection.objects[0]);
 
-            if (!EditorUtility.DisplayDialog("Delete selected asset?", $"{assetPath}\n\nYou cannot undo the delete assets action.", "Delete", "Cancel"))
-                return;
+            if (Selection.objects.Length == 1)
+            {
+                if (!EditorUtility.DisplayDialog("Delete selected asset?", $"{assetPath}\n\nYou cannot undo the delete assets action.", "Delete", "Cancel"))
+                    return;
+            }
+            else if (Selection.objects.Length > 1)
+            {
+                if (!EditorUtility.DisplayDialog("Delete selected assets?", $"{Selection.objects.Length} Assets\n\nYou cannot undo the delete assets action.", "Delete", "Cancel"))
+                    return;
+            }
+
+            List<string> ToBeDeletedList = new List<string>();
 
             foreach (Object currentGo in Selection.objects)
             {
-                if (currentGo == null)
+                string path = AssetDatabase.GetAssetPath(currentGo);
+                if (string.IsNullOrEmpty(path) == false)
                 {
-                    Debug.LogError($"Found Null Object in the selection");
-                    continue;
+                    if (!ToBeDeletedList.Contains(path))
+                        ToBeDeletedList.Add(path);
                 }
+            }
 
-                string selectedAssetPath = AssetDatabase.GetAssetPath(currentGo.GetInstanceID());
-                string previewImage = selectedAssetPath.Replace(Path.GetExtension(selectedAssetPath), ".png");
+            foreach (string delPath in ToBeDeletedList)
+            {
+                string previewImage = delPath.Replace(Path.GetExtension(delPath), ".png");
 
-                if (string.IsNullOrEmpty(selectedAssetPath))
-                {
-                    Debug.LogError($"Could not find the asset Path : {currentGo.name}");
-                    continue;
-                }
-
-                Object targetObj = AssetDatabase.LoadAssetAtPath<Object>(selectedAssetPath);
+                Object targetObj = AssetDatabase.LoadAssetAtPath<Object>(delPath);
 
                 if (targetObj != null)
                 {
@@ -610,15 +704,11 @@ namespace LookDev.Editor
                     if (AssetDatabase.LoadAssetAtPath<Texture>(previewImage) != null)
                         AssetDatabase.DeleteAsset(previewImage);
 
-                    if (!AssetDatabase.DeleteAsset(selectedAssetPath))
-                    {
-                        Debug.LogError($"Failed to delete {selectedAssetPath}");
-                    }
-                    else
-                    {
-                        if (SceneView.lastActiveSceneView != null)
-                            SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Asset Deleted :\n {selectedAssetPath}"), 4f);
-                    }
+                    AssetDatabase.DeleteAsset(delPath);
+
+                    if (SceneView.lastActiveSceneView != null)
+                        SceneView.lastActiveSceneView.ShowNotification(new GUIContent($"Assets Deleted"), 4f);
+
                 }
             }
 

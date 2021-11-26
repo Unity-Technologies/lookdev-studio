@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 
+using AnimatorSelectionWindow = LookDev.Editor.AnimatorSelectionWindow;
+
 
 [InitializeOnLoad]
 public class AnimationTool
@@ -14,7 +16,9 @@ public class AnimationTool
 
     public static bool isPause = false;
 
-    public static bool autoRewind = false;
+    public static bool isPlayed = false;
+
+    public static bool autoRewind = true;
 
     public static Animator targetAnimator;
 
@@ -26,6 +30,7 @@ public class AnimationTool
 
     static AnimationTool()
     {
+
         string animatorControllerPath = "Assets/LookDev/AnimatorControllers";
 
         if (AssetDatabase.IsValidFolder(animatorControllerPath) == false)
@@ -93,14 +98,50 @@ public class AnimationTool
 
     static void GetCurrentAnimator(out Animator animator)
     {
-        animator = GameObject.FindObjectOfType<Animator>();
+
+        Animator[] animators = GameObject.FindObjectsOfType<Animator>();
+
+        if (animators.Length == 1)
+            animator = GameObject.FindObjectOfType<Animator>();
+        else if (animators.Length > 1)
+        {
+            AnimatorSelectionWindow animatorSelectionWindow = EditorWindow.GetWindow<AnimatorSelectionWindow>();
+
+            animatorSelectionWindow.titleContent = new GUIContent("Select the Target Animator");
+
+            animatorSelectionWindow.maxSize = new Vector2(300, 100);
+            animatorSelectionWindow.minSize = animatorSelectionWindow.maxSize;
+
+            animatorSelectionWindow.Reset();
+
+            foreach (Animator at in animators)
+            {
+                animatorSelectionWindow.animators.Add(at);
+            }
+
+            animatorSelectionWindow.ShowModalUtility();
+            animator = animatorSelectionWindow.GetSelectedAnimator();
+
+        }
+        else
+            animator = null;
     }
 
+    public static void SetSpeed(float speed)
+    {
+        if (targetAnimator != null)
+        {
+            targetAnimator.speed = speed;
+        }
+    }
 
     static void UpdateAnimationOnEditor()
     {
         if (targetAnimator != null)
         {
+            if (UnityEditorInternal.InternalEditorUtility.isApplicationActive == false)
+                return;
+
             targetAnimator.Play(defaultAnimatorStateName);
             targetAnimator.Update(Time.deltaTime);
 
@@ -129,6 +170,7 @@ public class AnimationTool
 
         string controllerPath = AssetDatabase.GetAssetPath(targetAnimator.runtimeAnimatorController);
 
+
         if (string.IsNullOrEmpty(controllerPath))
             return;
 
@@ -148,7 +190,8 @@ public class AnimationTool
 
     public static void LoadAnimation(AnimationClip targetClip)
     {
-        GetCurrentAnimator(out targetAnimator);
+        //if (targetAnimator == null || loadedClips.Count == 0)
+            GetCurrentAnimator(out targetAnimator);
 
         if (targetAnimator != null)
         {
@@ -177,6 +220,11 @@ public class AnimationTool
             }
 
         }
+        else
+        {
+            Debug.LogWarning("Could not load the Animation. Need a model or a Prefab that has the Animator component in the Scene.");
+            return;
+        }
 
         string controllerPath = AssetDatabase.GetAssetPath(targetAnimator.runtimeAnimatorController);
 
@@ -201,7 +249,9 @@ public class AnimationTool
         {
             if (modelGroup.transform.GetChild(i).gameObject.GetComponentInChildren<SkinnedMeshRenderer>(true) != null)
             {
-                if (modelGroup.transform.GetChild(i).gameObject.GetComponentInChildren<Animator>(true) == null)
+                Animator[] animators = modelGroup.transform.GetChild(i).gameObject.GetComponentsInChildren<Animator>(true);
+
+                if (animators.Length == 0)
                 {
                     Animator genericAnimator = modelGroup.transform.GetChild(i).gameObject.AddComponent<Animator>();
 
@@ -210,8 +260,8 @@ public class AnimationTool
                 }
                 else
                 {
-                    Animator exAnimator = modelGroup.transform.GetChild(i).gameObject.GetComponentInChildren<Animator>(true);
-                    exAnimator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(defaultAnimatorControllerPath);
+                    foreach (Animator animator in animators)
+                        animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(defaultAnimatorControllerPath);
                 }
             }
             else
@@ -222,8 +272,10 @@ public class AnimationTool
 
     static GameObject GetRootGameObjectWithAnimator()
     {
+        /*
         if (targetAnimator == null)
             GetCurrentAnimator(out targetAnimator);
+        */
 
         if (targetAnimator != null)
         {
@@ -231,8 +283,14 @@ public class AnimationTool
 
             for (int i=0;i<modelGroup.transform.childCount;i++)
             {
-                if (modelGroup.transform.GetChild(i).gameObject.GetComponentInChildren<Animator>(true) == targetAnimator)
-                    return modelGroup.transform.GetChild(i).gameObject;
+                Animator[] animators = modelGroup.transform.GetChild(i).gameObject.GetComponentsInChildren<Animator>(true);
+
+                foreach(Animator animator in animators)
+                {
+                    if (animator == targetAnimator)
+                        return modelGroup.transform.GetChild(i).gameObject;
+                }
+                
             }
         }
 
@@ -242,8 +300,16 @@ public class AnimationTool
 
     public static void PlayAnimator()
     {
+        /*
         if (targetAnimator == null)
             GetCurrentAnimator(out targetAnimator);
+        */
+
+        if (targetAnimator == null)
+        {
+            Debug.LogWarning("Could not Play the animation in the Scene. Need a Model or a Prefab that has the Animator component");
+            return;
+        }
 
         if (targetAnimator.runtimeAnimatorController == null)
             targetAnimator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(defaultAnimatorControllerPath);
@@ -256,13 +322,16 @@ public class AnimationTool
         EditorApplication.update += UpdateAnimationOnEditor;
 
         isPause = false;
+        isPlayed = true;
     }
 
 
     public static void StopAnimator()
     {
+        /*
         if (targetAnimator == null)
             GetCurrentAnimator(out targetAnimator);
+        */
 
         EditorApplication.update -= UpdateAnimationOnEditor;
     }
@@ -309,6 +378,14 @@ public class AnimationTool
         if (targetAnimator != null)
         {
             targetAnimator.runtimeAnimatorController = null;
+
+            Animator[] animators = GameObject.FindObjectsOfType<Animator>();
+
+            foreach(Animator animator in animators)
+            {
+                if (animator.runtimeAnimatorController != null)
+                    animator.runtimeAnimatorController = null;
+            }
         }
 
     }

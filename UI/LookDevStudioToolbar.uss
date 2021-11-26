@@ -4,15 +4,17 @@
 }
 
 .cameraButton {
-    width: 25px;
+    width: 36px;
     height: 25px;
     background-image: resource('Icon_Camera');
     flex-direction: row-reverse;
     justify-content: flex-end;
     align-items: flex-start;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .selectedCameraButton {
+    /*
     border-left-color: rgb(255, 118, 0);
     border-right-color: rgb(255, 118, 0);
     border-top-color: rgb(255, 118, 0);
@@ -21,6 +23,13 @@
     border-right-width: 2px;
     border-top-width: 2px;
     border-bottom-width: 2px;
+    */
+    /*
+    background-color: rgba(0.275, 0.376, 0.486, 1.0);
+    border-color: rgba(0.141, 0.141, 0.141, 1.0);
+    border-top-color: rgba(0.051, 0.051, 0.051, 1.0);
+    */
+    background-color: rgb(70, 96, 124);
 }
 
 .cameraButtonLabel {
@@ -34,6 +43,6 @@
 
 .screenshotButton {
     visibility: hidden;
-    width: 60px;
-    height: 28px;
+    width: 100px;
+    height: 25px;
 }
